@@ -1,4 +1,10 @@
-require("@nomiclabs/hardhat-waffle");
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-ethers";
+import "hardhat-contract-sizer";
+import "hardhat-gas-reporter";
+import "hardhat-tracer";
+import { task, HardhatUserConfig } from "hardhat/config";
+import "ts-node/register";
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -16,9 +22,6 @@ if(typeof process.env.FUJI_PRIVATE_KEY === 'undefined') {
     throw new Error('The FUJI_PRIVATE_KEY variable is not defined in the environment.\n'
         + 'This can be set to a dummy value if you are not deploying to Fuji.')
 }
-
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -111,6 +114,12 @@ const config: HardhatUserConfig = {
         accountsBalance: "1000000000000000000000000000000", 
         count: 50
       }
+    },
+    avash: {
+      url: 'http://localhost:9650/ext/bc/C/rpc',
+      gasPrice: 470000000000,
+      chainId: 43112,
+      accounts: ["0x56289e99c94b6912bfc12adc093c9b51124f0dc54ac7a766b2bc5ccf558d8027"]
     },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
