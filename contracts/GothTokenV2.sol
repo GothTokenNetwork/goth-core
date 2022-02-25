@@ -1,49 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.7;
 
-interface IERC20 
-{
+import "./Utils/Context.sol";
+import "./ERC20/IERC20.sol";
+import "./ERC20/IERC20Metadata.sol";
 
-    function totalSupply() external view returns (uint256);
-    
-    function balanceOf(address account) external view returns (uint256);
-
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-interface IERC20Metadata is IERC20 
-{
-    function name() external view returns (string memory);
-
-    function symbol() external view returns (string memory);
-
-    function decimals() external view returns (uint8);
-}
-
-abstract contract Context 
-{
-    function _msgSender() internal view virtual returns (address) 
-    {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes calldata)
-    {
-        return msg.data;
-    }
-}
-
-contract ERC20 is Context, IERC20, IERC20Metadata 
+contract GothTokenV2 is Context, IERC20, IERC20Metadata 
 {
     mapping(address => uint256) private _balances;
 
@@ -54,10 +16,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata
     string private _name;
     string private _symbol;
 
-    constructor(string memory name_, string memory symbol_) 
+    constructor() 
     {
-        _name = name_;
-        _symbol = symbol_;
+        _name = "GOTH Token v2";
+        _symbol = "GOTHv2";
+        _mint(address(this), 1000000000 * 10 ** decimals());
     }
 
     function name() public view virtual override returns (string memory) 
@@ -88,6 +51,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata
     function transfer(address recipient, uint256 amount) public virtual override returns (bool)
     {
         _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function burn(uint256 amount) public virtual returns (bool)
+    {
+        _burn(_msgSender(), amount);
         return true;
     }
 
@@ -198,22 +167,4 @@ contract ERC20 is Context, IERC20, IERC20Metadata
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 
     function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
-}
-
-abstract contract ERC20Burnable is Context, ERC20 
-{
-    function burn(uint256 amount) public virtual 
-    {
-        _burn(_msgSender(), amount);
-    }
-}
-
-
-/// @custom:security-contact admin@gothtoken.co.uk
-contract gothtoken is ERC20, ERC20Burnable 
-{
-    constructor() ERC20("GOTH Token", "GOTH") 
-    {
-        _mint(msg.sender, 1000000000000 * 10 ** decimals());
-    }
 }
