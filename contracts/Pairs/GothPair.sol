@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.6.12;
 
 import "./IGothPairERC20.sol";
 import "../Utils/Math.sol";
@@ -80,7 +80,7 @@ contract GothPair is GothPairERC20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
-    constructor() {
+    constructor() public {
         factory = msg.sender;
     }
 

@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.6.12;
 
 import "../Utils/SafeGothMath.sol";
 
@@ -21,7 +21,7 @@ contract GothPairERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    constructor() {
+    constructor() public {
         uint256 chainId;
         assembly {
             chainId := chainid()

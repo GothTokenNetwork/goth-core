@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.6.12;
 
 import "./IGothFactory.sol";
 import "./GothPair.sol";
@@ -14,7 +14,7 @@ contract GothFactory is IGothFactory {
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint256);
 
-    constructor(address _feeToSetter) {
+    constructor(address _feeToSetter) public {
         feeToSetter = _feeToSetter;
     }
 
