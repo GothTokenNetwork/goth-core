@@ -7,11 +7,11 @@ import "../Utils/SafeMath.sol";
 contract EssenceFarm {
     using SafeMath for uint256;
 
-    //_earthEssence = 0
-    //_airEssence = 1
-    //_spiritEssence = 2
-    //_waterEssence = 3
-    //_fireEssence = 4
+    // Earth Essence = 0
+    // Air Essence = 1
+    // Spirit Essence = 2
+    // Water Essence = 3
+    // Fire Essence = 4
     EssenceERC20[5] private _essenceFarms;
 
     IERC20 private immutable _gothPair;
@@ -113,6 +113,7 @@ contract EssenceFarm {
 
     function _calculateBonus (address ofAddress) internal virtual returns (uint256)
     {
+        /// Needs refactoring
         uint256 bonus = _getAllFarmTotal(ofAddress).div(10000);
         bonus.add(1);
         users[ofAddress].bonus = bonus;
