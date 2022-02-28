@@ -24,9 +24,9 @@ contract EssenceFarm {
     IERC20 private immutable _gothPair;
 
     // User farm info
-    struct Farmer { uint256 amount; uint256 lastClaim; }
+    struct Farmer { uint256 totalStaked; uint256 accruedEssence; uint256 lastClaim; }
     // User info
-    struct User { uint256 totalStaked; uint256 totalEssence; uint256 bonus; uint256 nextUnlock; }
+    struct User { uint256 totalStaked; uint256 totalEssence; uint256 level; uint256 nextUnlock; }
 
     // User farm mapping
     mapping(uint8 => mapping(address => Farmer)) private farmers;
@@ -135,7 +135,7 @@ contract EssenceFarm {
         Farmer storage farmer = farmers[farmId][sender];
         if (farmer.amount > 0 && farmer.lastClaim > block.timestamp)
         {
-            return farmer.amount.div(1000000).mul(users[sender].bonus.mul(_bonusMod)).mul(block.timestamp.sub(farmer.lastClaim));
+            return farmer.amount.div(1000000000000000000).mul(users[sender].level.mul(_bonusMod)).mul(block.timestamp.sub(farmer.lastClaim));
         }
         else
         {
