@@ -2,8 +2,8 @@
 pragma solidity ^0.8.7;
 
 import "./GothTokenV2.sol";
-import "./Utils/SafeMath.sol";
-import "./ERC20/IERC20.sol";
+import "../utils/SafeMath.sol";
+import "../erc20/IERC20.sol";
 
 contract GothV2Swap is GothTokenV2
 {

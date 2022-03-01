@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.7;
 
-import "./Utils/Context.sol";
-import "./ERC20/IERC20.sol";
-import "./ERC20/IERC20Metadata.sol";
+import "../utils/Context.sol";
+import "../erc20/IERC20.sol";
+import "../erc20/IERC20Metadata.sol";
 
 contract GothTokenV2 is Context, IERC20, IERC20Metadata 
 {

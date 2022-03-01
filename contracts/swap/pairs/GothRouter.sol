@@ -2,8 +2,8 @@
 pragma solidity =0.6.12;
 
 import "./GothLibrary.sol";
-import "../Utils/SafeGothMath.sol";
-import "../Utils/TransferHelper.sol";
+import "../../utils/SafeGothMath.sol";
+import "../../utils/TransferHelper.sol";
 import "./IGothRouter.sol";
 import "./IGothFactory.sol";
 import "./IGothPairERC20.sol";

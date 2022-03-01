@@ -2,9 +2,9 @@
 pragma solidity =0.6.12;
 
 import "./IGothPairERC20.sol";
-import "../Utils/Math.sol";
+import "../../utils/Math.sol";
 import "./GothPairERC20.sol";
-import "../Utils/UQ112x112.sol";
+import "../../utils/UQ112x112.sol";
 import "./IGothFactory.sol";
 import "./IGothCallee.sol";
 

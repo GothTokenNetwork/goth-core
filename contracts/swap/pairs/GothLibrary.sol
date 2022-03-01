@@ -2,7 +2,7 @@
 pragma solidity >=0.5.0;
 
 import "./IGothPair.sol";
-import "../Utils/SafeGothMath.sol";
+import "../../utils/SafeGothMath.sol";
 
 library GothLibrary {
     using SafeGothMath for uint256;

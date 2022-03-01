@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.6.12;
 
-import "../Utils/SafeGothMath.sol";
+import "../../utils/SafeGothMath.sol";
 
 contract GothPairERC20 {
     using SafeGothMath for uint256;

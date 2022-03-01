@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.2;
 
-import "./ERC20/ERC20.sol";
-import "./ERC20/ERC20Burnable.sol";
+import "../erc20/ERC20.sol";
+import "../erc20/ERC20Burnable.sol";
 
 contract OldGothToken is ERC20, ERC20Burnable 
 {

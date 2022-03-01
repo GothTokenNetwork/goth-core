@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import "./ERC20/ERC20.sol";
-import "./Utils/SafeMath.sol";
+import "../erc20/ERC20.sol";
+import "../utils/SafeMath.sol";
 
 // GothStake is a modified version of JoeBar.sol that is from Trader Joe's GitHub joe-core repository, found here;
 // https://github.com/traderjoe-xyz/joe-core/blob/main/contracts/JoeBar.sol.
