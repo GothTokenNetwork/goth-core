@@ -18,9 +18,12 @@ contract EssenceERC20 is Ownable, IERC20, IERC20Metadata {
     string private _name;
     string private _symbol;
 
-    constructor(string memory name_, string memory symbol_) {
+    IERC20 private _gothPair;
+
+    constructor(string memory name_, string memory symbol_, IERC20 gothPair_) {
         _name = name_;
         _symbol = symbol_;
+        _gothPair = gothPair_;
     }
 
     function name() public view virtual override returns (string memory) {
@@ -94,7 +97,7 @@ contract EssenceERC20 is Ownable, IERC20, IERC20Metadata {
 
     function withdrawGSLTo (address account, uint256 amount) public onlyOwner
     {
-        _transfer(address(this), account, amount);
+        _gothPair.transfer(account, amount);
     }
 
     function _transfer(
