@@ -23,7 +23,10 @@ contract EssenceFarm is Ownable, Sender {
     // Fire Essence = 4
 
     // GothPair interface
-    IERC20 private _gothPair;
+    IERC20[] private _acceptedPairs;
+
+    // Potion Manager
+    address private _potionManager;
 
     // User farm info
     struct Farmer { uint256 totalStaked; uint256 accruedEssence; uint256 lastInteraction; }
@@ -55,10 +58,14 @@ contract EssenceFarm is Ownable, Sender {
         _;
     }
 
+      ///////////////////////////////////////////////
+     // UPDATE CONTRACT TO SUPPORT MULTIPLE POOLS //
+    ///////////////////////////////////////////////
+
     // CONSTRUCTOR //
     constructor (IERC20 gothPair_)
     {
-        _gothPair = gothPair_;
+        _acceptedPairs.push(gothPair_);
         _baseMintRate = 10000000000000000000;
         // Deploys all essence farms and assigns them to the array
         addFarm('Earth Essence', 'EARTH');
