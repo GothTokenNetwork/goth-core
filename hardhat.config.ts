@@ -153,7 +153,7 @@ const config: HardhatUserConfig = {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 470000000000,
       chainId: 43113,
-      accounts: [`0x${FUJI_PRIVATE_KEY}`]
+      accounts: ["fc22cb995181f45fc0d9bf6a26bd686bcc30c6e1a2c0e02df08497809ba84931"]
     },
     mainnet: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
@@ -168,9 +168,12 @@ const config: HardhatUserConfig = {
     disambiguatePaths: false,
   },
   gasReporter: {
+    currency: 'USD',
+    token: 'AVAX',
     enabled: true,
     showTimeSpent: true, 
-    gasPrice: 225
+    gasPrice: 41,
+    src: 'contracts'
   },
 };
 

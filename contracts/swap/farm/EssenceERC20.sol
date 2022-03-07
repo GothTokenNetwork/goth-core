@@ -7,6 +7,8 @@ import "../../erc20/IERC20.sol";
 import "../../erc20/IERC20Metadata.sol";
 import "../../utils/Context.sol";
 import "../../utils/Ownable.sol";
+import "../pairs/IGothPair.sol";
+import "../../erc20/SafeERC20.sol";
 
 contract EssenceERC20 is Ownable, IERC20, IERC20Metadata {
     mapping(address => uint256) private _balances;
@@ -18,12 +20,16 @@ contract EssenceERC20 is Ownable, IERC20, IERC20Metadata {
     string private _name;
     string private _symbol;
 
-    IERC20 private _gothPair;
+    IGothPair private _gothPair;
 
-    constructor(string memory name_, string memory symbol_, IERC20 gothPair_) {
+    constructor(string memory name_, string memory symbol_, IGothPair gothPair_) {
         _name = name_;
         _symbol = symbol_;
         _gothPair = gothPair_;
+    }
+
+    function gothPair () public view returns (IGothPair) {
+        return _gothPair;
     }
 
     function name() public view virtual override returns (string memory) {

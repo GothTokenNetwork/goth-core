@@ -28,7 +28,7 @@ library GothLibrary {
                         hex"ff",
                         factory,
                         keccak256(abi.encodePacked(token0, token1)),
-                        hex"ce6c6eec5cc8d69ac534e827be52dfa14275ce510e37a998b68561241626441b" // init code fuji
+                        hex"8f43b4b801158273fc3f84b0919cfde4d49c1c2613e012a51bb44831a02631bf" // init code fuji
                     )
                 )
             )
