@@ -296,12 +296,15 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
                 }
             }
 
-            uint256 reward = (multiplier
-                .mul(_baseMintRate)
-                .mul(farmer.staked)
-                .div(farmBalance(farmId))
-                .div(levelMod)
-                .mul(bonusYield));
+            uint256 reward = (time
+                    .mul(_baseMintRate)
+                    .mul(farmer.staked)
+                    .mul(10000)
+                    .div(farmBalance(farmId)))
+                    .mul(levelMod)
+                    .div(1000)
+                    .mul(userLevel)
+                    .mul(bonusYield));
 
             return reward;
         }
