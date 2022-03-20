@@ -3,11 +3,7 @@ pragma solidity ^0.8.7;
 
 interface IEssenceFarm 
 {
-    function baseMintRate () external view returns (uint256);
-
     function potionMaster () external view returns (address);
-
-    function emergencyBenefactor () external view returns (address);
 
     function farmAddress (uint256 farmId) external view returns (address);
 

@@ -29,20 +29,20 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
 
 // Define Structs
     struct Effect { 
-        uint256 value; 
-        uint256 expires; 
-        string potionId; 
+        uint32 value; 
+        uint32 expires; 
+        bytes32 potionId;  
     }
 
     struct FarmInfo { 
         uint256 staked; 
         uint256 accruedEssence; 
-        uint256 lastInteraction; 
+        uint32 lastInteraction; 
         Effect bonusYield;
         Effect farmMorph;
     } 
 
-    struct Farm { EssenceERC20 essence; IGothPair pair; uint256 farmBonus; }
+    struct Farm { EssenceERC20 essence; IGothPair pair; uint32 farmBonus; }
 
 // Arrays & Mappings
     mapping(uint256 => mapping(address => FarmInfo)) _farmers;
@@ -50,26 +50,20 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
 
 // Paramaters
     IUserLevels private _userLevels;
-
-    uint256 private _baseMintRate;
     address private _potionMaster;
-    address private _emergencyBenefactor;
+    uint256 private _baseMintRate;
 
 // Events
     event Deposit(address sender, uint256 amount, uint256 farmId);
     event Withdraw(address sender, uint256 amount, uint256 farmId);
     event ClaimReward(address sender, uint256 amount, uint256 farmId);
     event AddFarm(string name, string symbol, uint256 bonus, address pairAddress, uint256 farmId);
-    event RemoveFarm(string message, uint256 farmId);
-    event SetBaseMintRate(uint256 newMintRate);
     event SetPotionMaster(address newPotionMaster);
     event InstantEssencePayout(uint256 farmId, uint256 amount, address user);
-    event ApplyBonusYield(uint256 farmId, uint256 bonus, uint256 expires, string potionId, address user);
-    event ApplyFarmMorph(uint256 farmId, uint256 morphTo, uint256 expires, string potionId, address user);
-    event SetEmergencyBenefactor(address newEmergencyBenefactor);
-    event EmergencyRemove(uint256 farmId, uint256 amount);
+    event ApplyBonusYield(uint256 farmId, uint32 bonus, uint32 expires, bytes32 potionId, address user);
+    event ApplyFarmMorph(uint256 farmId, uint32 morphTo, uint32 expires, bytes32 potionId, address user);
     event SetUserLevels(address newUserLevels);
-    event PotionEffectExpired(address user, string potionId);
+    event PotionEffectExpired(address user, bytes32 potionId);
 
 // Modifiers
     modifier farmRequired(uint256 farmId) {
@@ -85,7 +79,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
 // Constructor
     constructor (IGothPair gothPair_)
     {
-        _baseMintRate = 10000000000000000000;
+        _baseMintRate = 1e18;
         addFarm("Earth Essence", "EARTH", 1, gothPair_);
         addFarm("Air Essence", "AIR", 1, gothPair_);
         addFarm("Spirit Essence", "SPIRIT", 1, gothPair_);
@@ -103,15 +97,6 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         return address(_userLevels);
     }
 
-    function baseMintRate () external view override returns (uint256) {
-        return _baseMintRate;
-    }
-   
-    function setBaseMintRate (uint256 newMintRate) external onlyOwner {
-        _baseMintRate = newMintRate;
-        emit SetBaseMintRate(_baseMintRate);
-    }
-
     function setPotionMaster (address newPotionMaster) external onlyOwner {
         _potionMaster = newPotionMaster;
         emit SetPotionMaster(_potionMaster);
@@ -119,15 +104,6 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
 
     function potionMaster () external view override returns (address) {
         return _potionMaster;
-    }
-
-    function setEmergencyBenefactor (address newEmergencyBenefactor) external onlyOwner {
-        _emergencyBenefactor = newEmergencyBenefactor;
-        emit SetEmergencyBenefactor(_emergencyBenefactor);
-    }
-
-    function emergencyBenefactor () external view override returns (address) {
-        return _emergencyBenefactor;
     }
 
 // Farm Management
@@ -156,7 +132,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         return _farms[farmId].essence.balanceOf(sender);
     }
 
-    function addFarm (string memory name, string memory symbol, uint256 bonus, IGothPair pair) public onlyOwner {
+    function addFarm (string memory name, string memory symbol, uint32 bonus, IGothPair pair) public onlyOwner {
         require(bytes(name).length > 0, "addFarm: please provide name");
         require(bytes(symbol).length > 0, "addFarm: please provide symbol");
         require(bonus > 0, "addFarm: bonus cannot be 0");
@@ -168,22 +144,6 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
             })
         );
         emit AddFarm(name, symbol, bonus, address(pair), _farms.length - 1);
-    }
-
-    function removeFarm (uint256 farmId) public onlyOwner farmRequired(farmId)
-    {
-        require(farmId > 4, "removeFarm: protected farm");
-        require(_farms[farmId].pair.balanceOf(address(_farms[farmId].essence)) <= 0, "removeFarm: farm still has GSL tokens staked");
-        delete _farms[farmId];
-        emit RemoveFarm("Farm has been removed", farmId);
-    }
-
-    function emergencyRemove (uint256 farmId) public farmRequired(farmId) onlyOwner returns (bool)
-    {
-        uint256 balance = farmBalance(farmId);
-        _farms[farmId].essence.withdrawGSLTo(_emergencyBenefactor, balance);
-        emit EmergencyRemove(farmId, balance);
-        return true;
     }
 
 // Farm Interaction
@@ -205,7 +165,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         }
 
         farmer.staked = farmer.staked + amount;
-        farmer.lastInteraction = block.timestamp;
+        farmer.lastInteraction = uint32(block.timestamp);
         TransferHelper.safeTransferFrom(address(_farms[farmId].pair), msg.sender, address(_farms[farmId].essence), amount);
         emit Deposit(msg.sender, amount, farmId);
         return true;
@@ -226,7 +186,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         }
 
         farmer.staked = farmer.staked - amount;
-        farmer.lastInteraction = block.timestamp;
+        farmer.lastInteraction = uint32(block.timestamp);
         _farms[farmId].essence.withdrawGSLTo(msg.sender, amount);
         emit Withdraw(msg.sender, amount, farmId);
         return true;
@@ -247,7 +207,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         }
         else
         {
-            if (bytes(farmer.farmMorph.potionId).length > 0)
+            if (farmer.farmMorph.potionId.length > 0)
             {
                 emit PotionEffectExpired(sender, farmer.farmMorph.potionId);
                 farmer.farmMorph.potionId = "";
@@ -269,42 +229,32 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         FarmInfo storage farmer = _farmers[farmId][sender];
         if (farmer.staked > 0)
         {
-            uint256 multiplier = block.timestamp.sub(farmer.lastInteraction);
-            uint256 levelMod = 1;
-            uint256 bonusYield = 1;
+            uint256 time = block.timestamp.sub(farmer.lastInteraction);
+            uint32 bonusYield = 0;
 
             uint256 totalUserLevel = _userLevels.totalUserLevels();
             uint256 userLevel = _userLevels.levelOf(sender);
 
-            if (totalUserLevel > userLevel)
-            {
-                levelMod = totalUserLevel.sub(userLevel);
-            }
-
             if (farmer.bonusYield.value > 1 && farmer.bonusYield.expires < block.timestamp)
             {
-                bonusYield = farmer.bonusYield.value;
+                bonusYield = uint32(farmer.bonusYield.value);
             }
             else
             {
                 farmer.bonusYield.value = 1;
 
-                if (bytes(farmer.bonusYield.potionId).length > 0)
+                if (farmer.bonusYield.potionId.length > 0)
                 {
                     emit PotionEffectExpired(sender, farmer.bonusYield.potionId);
                     farmer.bonusYield.potionId = "";
                 }
             }
 
-            uint256 reward = (time
-                    .mul(_baseMintRate)
-                    .mul(farmer.staked)
-                    .mul(10000)
-                    .div(farmBalance(farmId)))
-                    .mul(levelMod)
-                    .div(1000)
-                    .mul(userLevel)
-                    .mul(bonusYield));
+            uint256 share = farmer.staked.mul(1e12).div(farmBalance(farmId)).mul(100);
+            uint256 mintShare = share.div(_baseMintRate).mul(100).mul(time);
+            uint levelBonus = userLevel.add(share.div(10));
+            // (((Share/Minted*100)*Time))+(Level+(Share/10))*(Bonus)
+            uint256 reward = mintShare.add(levelBonus).mul(bonusYield);
 
             return reward;
         }
@@ -321,7 +271,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         emit InstantEssencePayout(farmId, amount, farmUser);
     }
 
-    function applyBonusYield (uint256 farmId, uint256 bonus, uint256 expires, string memory potionId, address farmUser) public onlyPotionMaster farmRequired (farmId)
+    function applyBonusYield (uint256 farmId, uint32 bonus, uint32 expires, bytes32 potionId, address farmUser) public onlyPotionMaster farmRequired (farmId)
     {
         require(bonus > 0, "applyBonusYield: bonus cannot be 0");
         FarmInfo storage farmer = _farmers[farmId][farmUser];
@@ -331,7 +281,7 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         emit ApplyBonusYield(farmId, bonus, expires, potionId, farmUser);
     }
 
-    function applyFarmMorph (uint256 farmId, uint256 morphTo, uint256 expires, string memory potionId, address farmUser) public onlyPotionMaster farmRequired (farmId)
+    function applyFarmMorph (uint256 farmId, uint32 morphTo, uint32 expires, bytes32 potionId, address farmUser) public onlyPotionMaster farmRequired (farmId)
     {
         require(morphTo <= _farms.length - 1, 'applyFarmMorph: invalid farm id to morph to');
         FarmInfo storage farmer = _farmers[farmId][farmUser];
