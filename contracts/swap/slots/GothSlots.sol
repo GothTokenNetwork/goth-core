@@ -13,85 +13,100 @@ contract GothSlots is Ownable, Sender, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    address private _treasury;
-    uint256 private _spinCost;
+    address private devAddress;
 
-    uint256 payout;
+    bool private avaxPrizeActive;
 
-    event SetTreasury(address newTreasury);
+    uint256 private gothSpinCost;
+    uint256 private avaxSpinCost;
+    uint256 private gothPayoutThreshold;
+    uint256 private avaxPayoutThreshold;
+
+    mapping(uint8 => uint256) internal prizeValues;
+    public IERC20 goth;
+
+    struct PlayerInfo { 
+        uint256 accumulatedGOTH; 
+        uint256 accumulatedAVAX; 
+        bytes32 spinsRemaining;  
+    } 
+
+    mapping(address => PlayerInfo) internal players; 
+
+    event SetDevAddress(address newDevAddress);
     event WinningMatch(uint256 payout);
 
-    constructor (address treasury_)
+    constructor (IERC20 goth_, address devAddress_)
     {
-        _treasury = treasury_;
+        devAddress = devAddress_;
+        goth = goth_;
     }
 
-    function treasury () external view returns (address)
+    function devAddress () external view returns (address)
     {
-        return _treasury;
+        return devAddress;
     }
 
-    function setTreasury (address newTreasury) external onlyOwner returns (bool)
+    function setDevAddress (address newDevAddress) external onlyOwner returns (bool)
     {
-        _treasury = newTreasury;
-        emit SetTreasury(newTreasury);
+        devAddress = newDevAddress;
+        emit SetTreasury(newDevAddress);
     }
 
-    function requestSpin () external payable returns (bool success)
+    function purchaseSpins (uint8 count) external payable nonReentrant returns (bool)
     {
-        success = false;
-        require(msg.value >= _spinCost, "requestSpin: not enough avax");
+        if (avaxPrizeActive)
+        {
+            require(msg.value >= count.mul(avaxSpinCost), "purchaseSpins: not enough avax");
+        }
+        else
+        {
+            require(goth.balanceOf(msg.sender) >= count.mul(gothSpinCost), "purchaseSpins: not enough goth");   
+            goth.transferFrom(msg.sender, address(this), count.mul(gothSpinCost));      
+        }
+
+        require(msg.value >= _spinCost, "purchaseSpins: not enough avax");
         return true;
     }
 
-    function validateResult (uint256[3][3] memory results) external onlyOwner
+    function validateResult (uint256[3][3] calldata results) public pure returns (uint256[3][3] memory)
     {
-        uint256[3] memory reel1 = results[0];
-        uint256[3] memory reel2 = results[1];
-        uint256[3] memory reel3 = results[2];
+        uint256[3][3] memory matches; 
 
-        // Straight Matches
-        if (reel1[0] == reel2[0] && reel2[0] == reel3[0])
+        for (uint row = 0; row < 3; row++)
         {
-            // Matched Symbols
-            if (reel1[1] == reel2[1] && reel2[1] == reel3[1])
+            if (results[row][0] == results[row][1] && results[row][1] == results[row][2])
             {
-                // Matched Line
-                if (reel1[1] == 0)
-                {
-                    // Bottom Line
-                   emit WinningMatch(payout);
-                }
+                matches[row][0] = results[row][0];
+                matches[row][1] = results[row][0];
+                matches[row][2] = results[row][0];
+            }
 
-                if (reel1[1] == 1)
+            if (row == 0)
+            {
+                if (results[row][0] == results[row+1][1] && results[row+1][1] == results[row+2][2])
                 {
-                    // Middle Line
-                    emit WinningMatch(payout);
+                    matches[row][0] = results[row][0];
+                    matches[row+1][1] = results[row][0];
+                    matches[row+2][2] = results[row][0];
                 }
+            }
 
-                if (reel1[1] == 2)
+            if (row == 0)
+            {
+                if (results[row+2][2] == results[row+1][1] && results[row+1][1] == results[row][0])
                 {
-                    // Top Line
-                    emit WinningMatch(payout);
+                    matches[row+2][0] = results[row+2][2];
+                    matches[row+1][1] = results[row+2][2];
+                    matches[row][2] = results[row+2][2];
                 }
             }
         }
 
-        // Diagonal Matches
-        if (reel1[0] == reel2[0] && reel2[0] == reel3[0])
-        {
-            // Matched Symbols
-            if (reel1[1] == 0 && reel2[1] == 1 && reel3[1] == 2)
-            {   
-                // Bottom Right To Top Left Match
-                emit WinningMatch(payout);
-            }
-
-            if (reel1[1] == 2 && reel2[1] == 1 && reel3[1] == 0)
-            {   
-                // Top Right To Bottom Left Match
-                emit WinningMatch(payout);
-            }
-        }
+        return matches;
     }
+
+    function () public payable {
+        revert(); 
+    } 
 }
