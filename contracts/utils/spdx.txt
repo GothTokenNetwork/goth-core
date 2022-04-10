@@ -1,0 +1,15 @@
+UQ112x112.sol = GPL-3.0
+TransferHelper.sol = GPL-3.0
+Sender.sol = GPL-3.0
+
+SafeMath.sol = MIT
+SafeGothMath = GPL-3.0
+ReentrancyGuard.sol = MIT
+Ownable.sol = MIT
+Math.sol = GPL-3.0
+GothMath.sol = GPL-3.0
+EnumerableSet.sol = MIT
+Domain.sol = MIT
+Context.sol = MIT
+BoringOwnable = MIT
+Address.sol = MIT

@@ -22,7 +22,7 @@ async function main() {
     const ownerKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
 
     let gothPairJson = ''
-    await fs.readFile('F:/GOTH Project/goth-swap-core/artifacts/contracts/Pairs/GothPair.sol/GothPair.json', 'utf8' , (err, data) => { gothPairJson = JSON.parse(data); })
+    await fs.readFile('F:/GOTH Project/goth-core/artifacts/contracts/swap/pairs/GothPair.sol/GothPair.json', 'utf8' , (err, data) => { gothPairJson = JSON.parse(data); })
 
     console.log('Owner Address:', owner.address);
     const ownerWallet = new ethers.Wallet(ownerKey, ethers.provider)
@@ -30,22 +30,22 @@ async function main() {
     const test2Wallet = new ethers.Wallet(addr2Key, ethers.provider);
     const test3Wallet = new ethers.Wallet(addr3Key, ethers.provider);
 
-    const wavaxSource = await ethers.getContractFactory('contracts/WAVAX.sol:WAVAX')
+    const wavaxSource = await ethers.getContractFactory('contracts/swap/WAVAX.sol:WAVAX')
     const wavaxContract = await wavaxSource.deploy();
 
-    const oldGothSource = await ethers.getContractFactory('contracts/OldGothToken.sol:OldGothToken')
+    const oldGothSource = await ethers.getContractFactory('contracts/swap/OldGothToken.sol:OldGothToken')
     const oldGothContract = await oldGothSource.deploy();
 
-    const gothV2SwapSource = await ethers.getContractFactory('contracts/GothV2Swap.sol:GothV2Swap')
+    const gothV2SwapSource = await ethers.getContractFactory('contracts/swap/GothV2Swap.sol:GothV2Swap')
     const gothV2Swap = await gothV2SwapSource.deploy(oldGothContract.address, '0x0000000000000000000000000000000000000001');
     console.log('Goth v2 Swap deployed at...', gothV2Swap.address)  
 
-    const factorySource = await ethers.getContractFactory('contracts/Pairs/GothFactory.sol:GothFactory')
+    const factorySource = await ethers.getContractFactory('contracts/swap/pairs/GothFactory.sol:GothFactory')
     const factoryContract = await factorySource.deploy(owner.address)
     console.log('Goth Factory deployed at...', factoryContract.address)  
     console.log('Fee To Setter:', owner.address) 
     
-    const routerSource = await ethers.getContractFactory('contracts/Pairs/GothRouter.sol:GothRouter')
+    const routerSource = await ethers.getContractFactory('contracts/swap/pairs/GothRouter.sol:GothRouter')
     const routerContract = await routerSource.deploy(factoryContract.address, wavaxContract.address)
     console.log('Goth Router deployed at...', routerContract.address)
 
@@ -76,18 +76,18 @@ async function main() {
     await wavaxContract.connect(testWallet).approve(routerContract.address, ethers.BigNumber.from('2000000000000000000000000'));
     console.log('Approved router to spend test wallet wavax.');
 
-    // const result = await factoryContract.createPair(wavaxContract.address, gothV2Swap.address);
-    // console.log(result);
+    const result = await factoryContract.createPair(wavaxContract.address, gothV2Swap.address);
+    console.log(result);
 
-    const result2 = await routerContract.connect(testWallet).addLiquidityAVAX(
-        gothV2Swap.address,
-        ethers.BigNumber.from('10000000000000000000000000'),
-        ethers.BigNumber.from('0'),
-        ethers.BigNumber.from('0'),
-        testWallet.address,
-        1648250407,
-        options
-        );
+    // const result2 = await routerContract.connect(testWallet).addLiquidityAVAX(
+    //     gothV2Swap.address,
+    //     ethers.BigNumber.from('10000000000000000000000000'),
+    //     ethers.BigNumber.from('0'),
+    //     ethers.BigNumber.from('0'),
+    //     testWallet.address,
+    //     1683666252,
+    //     options
+    //     );
 
     let pairAddress = ''
 
@@ -124,9 +124,9 @@ async function main() {
     await wavaxContract.connect(test3Wallet).approve(routerContract.address, ethers.BigNumber.from('5000000000000000000000000000000'));
     console.log('Approved router to spend test wallet goth.');
 
-    console.log('Attemping swap exact GOTH for Avax');
-    const amounts = await routerContract.connect(testWallet).swapExactTokensForAVAX(ethers.BigNumber.from('50000000000000000000000'), 0, [gothV2Swap.address, wavaxContract.address], testWallet.address, 1648250407, options2);
-    console.log('Swap complete...');
+    // console.log('Attemping swap exact GOTH for Avax');
+    // const amounts = await routerContract.connect(testWallet).swapExactTokensForAVAX(ethers.BigNumber.from('50000000000000000000000'), 0, [gothV2Swap.address, wavaxContract.address], testWallet.address, 1683666252, options2);
+    // console.log('Swap complete...');
 
     const reserves2 = await pairContract.getReserves()
     const reserve02 = reserves2["_reserve0"]
@@ -134,10 +134,10 @@ async function main() {
     console.log('GOTH V2:', ethers.utils.formatEther(reserve02));
     console.log('WAVAX:', ethers.utils.formatEther(reserve12));
 
-    console.log('Attemping to add liquidity with test wallet');
-    const addliq = await routerContract.connect(testWallet).addLiquidityAVAX(gothV2Swap.address, ethers.BigNumber.from('50000000000000000000000'), 0, 0, testWallet.address, 1648250407, options);
-    const addliq2 = await routerContract.connect(test2Wallet).addLiquidityAVAX(gothV2Swap.address, ethers.BigNumber.from('2000000000000000000000'), 0, 0, test2Wallet.address, 1648250407, options3);
-    const addliq3 = await routerContract.connect(test3Wallet).addLiquidityAVAX(gothV2Swap.address, ethers.BigNumber.from('75000000000000000000000'), 0, 0, test3Wallet.address, 1648250407, options4);
+    // console.log('Attemping to add liquidity with test wallet');
+    // const addliq = await routerContract.connect(testWallet).addLiquidityAVAX(gothV2Swap.address, ethers.BigNumber.from('50000000000000000000000'), 0, 0, testWallet.address, 1683666252, options);
+    // const addliq2 = await routerContract.connect(test2Wallet).addLiquidityAVAX(gothV2Swap.address, ethers.BigNumber.from('2000000000000000000000'), 0, 0, test2Wallet.address, 1683666252, options3);
+    // const addliq3 = await routerContract.connect(test3Wallet).addLiquidityAVAX(gothV2Swap.address, ethers.BigNumber.from('75000000000000000000000'), 0, 0, test3Wallet.address, 1683666252, options4);
 
     const reserves23 = await pairContract.getReserves()
     const reserve023 = reserves23["_reserve0"]
@@ -147,39 +147,61 @@ async function main() {
 
     console.log('Pair GOTH v2 Balance:', await gothV2Swap.balanceOf(pairContract.address));
 
-    console.log('------------------------------------------------------')
-    console.log('---------------DEPLOYING ESSENCE FARMS----------------')
-    console.log('------------------------------------------------------')
+    const sigilSource = await ethers.getContractFactory('contracts/court/ArcaneSigils.sol:ArcaneSigils')
+    const sigil = await sigilSource.deploy();
+    console.log('Arcane Sigils -', sigil.address);
 
-    const essenceFarmSource = await ethers.getContractFactory('contracts/Farm/EssenceFarm.sol:EssenceFarm')
-    const essenceFarm = await essenceFarmSource.deploy(pairAddress);
-    console.log('Essence Farms deployed at...', essenceFarm.address);  
+    const weaverSource = await ethers.getContractFactory('contracts/ArcaneWeaver.sol:ArcaneWeaver')
+    const arcaneWeaver = await weaverSource.deploy(
+        sigil.address,
+        testWallet.address,
+        test2Wallet.address,
+        test3Wallet.address,
+        4133333333333333333n,
+        Math.floor(Date.now() / 1000),
+        200,
+        200,
+        100
+    );
+    console.log('Arcane Weaver -', arcaneWeaver.address);
 
-    const gslAmount = await pairContract.balanceOf(testWallet.address);
-    const gslAmount2 = await pairContract.balanceOf(testWallet2.address);
-    const gslAmount3 = await pairContract.balanceOf(testWallet3.address);
+    const dispenserSource = await ethers.getContractFactory('contracts/dispensers/BasicDispenserPerSec.sol:BasicDispenserPerSec')
+    const dispenser = await dispenserSource.deploy(gothV2Swap.address, pairContract.address, 4133333333333333333n, arcaneWeaver.address, false);
+    console.log('Arcane Dispenser -', dispenser.address);
 
-    await pairContract.connect(testWallet).approve(essenceFarm.address, gslAmount);
-    console.log('Approved farm to transfer test wallet GSL tokens.');
+    // console.log('------------------------------------------------------')
+    // console.log('---------------DEPLOYING ESSENCE FARMS----------------')
+    // console.log('------------------------------------------------------')
 
-    console.log('--| Test Wallet GSL Tokens: ', ethers.utils.formatEther(gslAmount));
+    // const essenceFarmSource = await ethers.getContractFactory('contracts/Farm/EssenceFarm.sol:EssenceFarm')
+    // const essenceFarm = await essenceFarmSource.deploy(pairAddress);
+    // console.log('Essence Farms deployed at...', essenceFarm.address);  
 
-    await essenceFarm.connect(testWallet).enterFarm(gslAmount, 0);
-    await essenceFarm.connect(test2Wallet).enterFarm(gslAmount2, 0);
-    await essenceFarm.connect(test3Wallet).enterFarm(gslAmount3, 0);
+    // const gslAmount = await pairContract.balanceOf(testWallet.address);
+    // const gslAmount2 = await pairContract.balanceOf(testWallet2.address);
+    // const gslAmount3 = await pairContract.balanceOf(testWallet3.address);
 
-    await essenceFarm.on("EnterFarm", (sender, amount, essenceType) => {
-      console.log('Sender:', sender);
-      console.log('Amount Entered:', ethers.utils.formatEther(amount));
-      console.log('Farm ID:', essenceType);
-    });
+    // await pairContract.connect(testWallet).approve(essenceFarm.address, gslAmount);
+    // console.log('Approved farm to transfer test wallet GSL tokens.');
 
-    console.log('Waiting 5 seconds for EnterFarm event...');
-    await delay2(5);
+    // console.log('--| Test Wallet GSL Tokens: ', ethers.utils.formatEther(gslAmount));
 
-    console.log('Farm 0 GSL Staked:', ethers.utils.formatEther(await essenceFarm.connect(testWallet).farmBalance(0)));
-    console.log('Farm 0 Last Claim:', parseTimestamp(await essenceFarm.connect(testWallet).farmLastClaim(0)));
-    console.log('Farm 0 GSL Balance:',  ethers.utils.formatEther(await pairContract.balanceOf(await essenceFarm.essenceFarm(0))));
+    // await essenceFarm.connect(testWallet).enterFarm(gslAmount, 0);
+    // await essenceFarm.connect(test2Wallet).enterFarm(gslAmount2, 0);
+    // await essenceFarm.connect(test3Wallet).enterFarm(gslAmount3, 0);
+
+    // await essenceFarm.on("EnterFarm", (sender, amount, essenceType) => {
+    //   console.log('Sender:', sender);
+    //   console.log('Amount Entered:', ethers.utils.formatEther(amount));
+    //   console.log('Farm ID:', essenceType);
+    // });
+
+    // console.log('Waiting 5 seconds for EnterFarm event...');
+    // await delay2(5);
+
+    // console.log('Farm 0 GSL Staked:', ethers.utils.formatEther(await essenceFarm.connect(testWallet).farmBalance(0)));
+    // console.log('Farm 0 Last Claim:', parseTimestamp(await essenceFarm.connect(testWallet).farmLastClaim(0)));
+    // console.log('Farm 0 GSL Balance:',  ethers.utils.formatEther(await pairContract.balanceOf(await essenceFarm.essenceFarm(0))));
 }
 
 function parseTimestamp (ts)

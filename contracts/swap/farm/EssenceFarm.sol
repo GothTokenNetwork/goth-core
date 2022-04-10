@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
 import "./EssenceERC20.sol";
@@ -219,12 +219,12 @@ contract EssenceFarm is IEssenceFarm, Ownable, Sender, ReentrancyGuard {
         emit ClaimReward(sender, reward, farmId);
     }
 
-    function calculateReward (uint256 farmId) external view farmRequired(farmId) returns (uint256)
+    function calculateReward (uint256 farmId) external farmRequired(farmId) returns (uint256)
     {
         return _farmers[farmId][msg.sender].accruedEssence + calculateRewardSinceLastTimestamp(msg.sender, farmId);
     }
 
-    function calculateRewardSinceLastTimestamp (address sender, uint256 farmId) private view farmRequired(farmId) returns (uint256)
+    function calculateRewardSinceLastTimestamp (address sender, uint256 farmId) private farmRequired(farmId) returns (uint256)
     {
         FarmInfo storage farmer = _farmers[farmId][sender];
         if (farmer.staked > 0)

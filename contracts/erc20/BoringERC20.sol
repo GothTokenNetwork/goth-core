@@ -1,140 +1,87 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 import "./IERC20.sol";
-import "../utils/Domain.sol";
 
-// solhint-disable no-inline-assembly
-// solhint-disable not-rely-on-time
+library BoringERC20 {
 
-// Data part taken out for building of contracts that receive delegate calls
-contract ERC20Data {
-    /// @notice owner > balance mapping.
-    mapping(address => uint256) public balanceOf;
-    /// @notice owner > spender > allowance mapping.
-    mapping(address => mapping(address => uint256)) public allowance;
-    /// @notice owner > nonce mapping. Used in `permit`.
-    mapping(address => uint256) public nonces;
-}
+    bytes4 private constant SIG_SYMBOL = 0x95d89b41; // symbol()
+    bytes4 private constant SIG_NAME = 0x06fdde03; // name()
+    bytes4 private constant SIG_DECIMALS = 0x313ce567; // decimals()
+    bytes4 private constant SIG_TRANSFER = 0xa9059cbb; // transfer(address,uint256)
+    bytes4 private constant SIG_TRANSFER_FROM = 0x23b872dd; // transferFrom(address,address,uint256)
 
-abstract contract ERC20 is IERC20, Domain {
-    /// @notice owner > balance mapping.
-    mapping(address => uint256) public override balanceOf;
-    /// @notice owner > spender > allowance mapping.
-    mapping(address => mapping(address => uint256)) public override allowance;
-    /// @notice owner > nonce mapping. Used in `permit`.
-    mapping(address => uint256) public nonces;
-
-    /// @notice Transfers `amount` tokens from `msg.sender` to `to`.
-    /// @param to The address to move the tokens.
-    /// @param amount of the tokens to move.
-    /// @return (bool) Returns True if succeeded.
-    function transfer(address to, uint256 amount) public returns (bool) {
-        // If `amount` is 0, or `msg.sender` is `to` nothing happens
-        if (amount != 0 || msg.sender == to) {
-            uint256 srcBalance = balanceOf[msg.sender];
-            require(srcBalance >= amount, "ERC20: balance too low");
-            if (msg.sender != to) {
-                require(to != address(0), "ERC20: no zero address"); // Moved down so low balance calls safe some gas
-
-                balanceOf[msg.sender] = srcBalance - amount; // Underflow is checked
-                balanceOf[to] += amount;
+    function returnDataToString(bytes memory data) internal pure returns (string memory) {
+        if (data.length >= 64) {
+            return abi.decode(data, (string));
+        } else if (data.length == 32) {
+            uint8 i = 0;
+            while (i < 32 && data[i] != 0) {
+                i++;
             }
+            bytes memory bytesArray = new bytes(i);
+            for (i = 0; i < 32 && data[i] != 0; i++) {
+                bytesArray[i] = data[i];
+            }
+            return string(bytesArray);
+        } else {
+            return "???";
         }
-        emit Transfer(msg.sender, to, amount);
-        return true;
     }
 
-    /// @notice Transfers `amount` tokens from `from` to `to`. Caller needs approval for `from`.
-    /// @param from Address to draw tokens from.
-    /// @param to The address to move the tokens.
-    /// @param amount The token amount to move.
-    /// @return (bool) Returns True if succeeded.
-    function transferFrom(
+    /// @notice Provides a safe ERC20.symbol version which returns '???' as fallback string.
+    /// @param token The address of the ERC-20 token contract.
+    /// @return (string) Token symbol.
+    function safeSymbol(IERC20 token) internal view returns (string memory) {
+        (bool success, bytes memory data) = address(token).staticcall(abi.encodeWithSelector(SIG_SYMBOL));
+        return success ? returnDataToString(data) : "???";
+    }
+
+    /// @notice Provides a safe ERC20.name version which returns '???' as fallback string.
+    /// @param token The address of the ERC-20 token contract.
+    /// @return (string) Token name.
+    function safeName(IERC20 token) internal view returns (string memory) {
+        (bool success, bytes memory data) = address(token).staticcall(abi.encodeWithSelector(SIG_NAME));
+        return success ? returnDataToString(data) : "???";
+    }
+
+    /// @notice Provides a safe ERC20.decimals version which returns '18' as fallback value.
+    /// @param token The address of the ERC-20 token contract.
+    /// @return (uint8) Token decimals.
+    function safeDecimals(IERC20 token) internal view returns (uint8) {
+        (bool success, bytes memory data) = address(token).staticcall(abi.encodeWithSelector(SIG_DECIMALS));
+        return success && data.length == 32 ? abi.decode(data, (uint8)) : 18;
+    }
+
+    /// @notice Provides a safe ERC20.transfer version for different ERC-20 implementations.
+    /// Reverts on a failed transfer.
+    /// @param token The address of the ERC-20 token.
+    /// @param to Transfer tokens to.
+    /// @param amount The token amount.
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 amount
+    ) internal {
+        (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(SIG_TRANSFER, to, amount));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "BoringERC20: Transfer failed");
+    }
+
+    /// @notice Provides a safe ERC20.transferFrom version for different ERC-20 implementations.
+    /// Reverts on a failed transfer.
+    /// @param token The address of the ERC-20 token.
+    /// @param from Transfer tokens from.
+    /// @param to Transfer tokens to.
+    /// @param amount The token amount.
+    function safeTransferFrom(
+        IERC20 token,
         address from,
         address to,
         uint256 amount
-    ) public returns (bool) {
-        // If `amount` is 0, or `from` is `to` nothing happens
-        if (amount != 0) {
-            uint256 srcBalance = balanceOf[from];
-            require(srcBalance >= amount, "ERC20: balance too low");
-
-            if (from != to) {
-                uint256 spenderAllowance = allowance[from][msg.sender];
-                // If allowance is infinite, don't decrease it to save on gas (breaks with EIP-20).
-                if (spenderAllowance != type(uint256).max) {
-                    require(spenderAllowance >= amount, "ERC20: allowance too low");
-                    allowance[from][msg.sender] = spenderAllowance - amount; // Underflow is checked
-                }
-                require(to != address(0), "ERC20: no zero address"); // Moved down so other failed calls safe some gas
-
-                balanceOf[from] = srcBalance - amount; // Underflow is checked
-                balanceOf[to] += amount;
-            }
-        }
-        emit Transfer(from, to, amount);
-        return true;
-    }
-
-    /// @notice Approves `amount` from sender to be spend by `spender`.
-    /// @param spender Address of the party that can draw from msg.sender's account.
-    /// @param amount The maximum collective amount that `spender` can draw.
-    /// @return (bool) Returns True if approved.
-    function approve(address spender, uint256 amount) public override returns (bool) {
-        allowance[msg.sender][spender] = amount;
-        emit Approval(msg.sender, spender, amount);
-        return true;
-    }
-
-    // solhint-disable-next-line func-name-mixedcase
-    function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _domainSeparator();
-    }
-
-    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 private constant PERMIT_SIGNATURE_HASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-
-    /// @notice Approves `value` from `owner_` to be spend by `spender`.
-    /// @param owner_ Address of the owner.
-    /// @param spender The address of the spender that gets approved to draw from `owner_`.
-    /// @param value The maximum collective amount that `spender` can draw.
-    /// @param deadline This permit must be redeemed before this deadline (UTC timestamp in seconds).
-    function permit(
-        address owner_,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external override {
-        require(owner_ != address(0), "ERC20: Owner cannot be 0");
-        require(block.timestamp < deadline, "ERC20: Expired");
-        require(
-            ecrecover(_getDigest(keccak256(abi.encode(PERMIT_SIGNATURE_HASH, owner_, spender, value, nonces[owner_]++, deadline))), v, r, s) ==
-                owner_,
-            "ERC20: Invalid Signature"
+    ) internal {
+        (bool success, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(SIG_TRANSFER_FROM, from, to, amount)
         );
-        allowance[owner_][spender] = value;
-        emit Approval(owner_, spender, value);
-    }
-}
-
-contract ERC20WithSupply is IERC20, ERC20 {
-    uint256 public override totalSupply;
-
-    function _mint(address user, uint256 amount) internal {
-        uint256 newTotalSupply = totalSupply + amount;
-        require(newTotalSupply >= totalSupply, "Mint overflow");
-        totalSupply = newTotalSupply;
-        balanceOf[user] += amount;
-        emit Transfer(address(0), user, amount);
-    }
-
-    function _burn(address user, uint256 amount) internal {
-        require(balanceOf[user] >= amount, "Burn too much");
-        totalSupply -= amount;
-        balanceOf[user] -= amount;
-        emit Transfer(user, address(0), amount);
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "BoringERC20: TransferFrom failed");
     }
 }
