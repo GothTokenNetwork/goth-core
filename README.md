@@ -2,7 +2,7 @@
 
 This is the main repository for the GOTH Token Network core contracts for the Avalanche blockchain, they are written in Solidity and use a Hardhat Runtime Environment.
 
-The following contracts are deployed;
+The following contracts are deployed on the Fuji Testnet;
 
 GOTH Token v1   - 0xCcBeCdF71Ba5CA7f8242Ae582D80489ed2d76F8a<br/>
 GOTH Token v2   - 0xC522a0f30196bD04aF68647233FC50AB8879DB7C<br/>
