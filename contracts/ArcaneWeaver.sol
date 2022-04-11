@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-
 import "./utils/SafeMath.sol";
 import "./utils/EnumerableSet.sol";
 import "./utils/ReentrancyGuard.sol";
@@ -10,6 +9,11 @@ import "./erc20/BoringERC20.sol";
 import "./court/ArcaneSigils.sol";
 import "./interfaces/IArcaneDispenser.sol";
 
+// Forked, merged and modified (slightly) from Trader Joe's joe-core repository found here
+// https://github.com/traderjoe-xyz/joe-core/tree/main/contracts
+// This is a merge of MasterChefV2 and MasterChefV3 contracts, it gives out a constant
+// number of SIGIL per block. It holds the minting rights for Arcane Sigil's, the GOTH
+// Token Networks governance token.
 contract ArcaneWeaver is BoringOwnable, ReentrancyGuard
 {
     // USINGS //
@@ -53,12 +57,13 @@ contract ArcaneWeaver is BoringOwnable, ReentrancyGuard
     // EVENTS //
     event FarmAdd(uint256 indexed farmId, uint256 allocation, IERC20 indexed lpToken, IArcaneDispenser indexed dispenser);
     event SetFarm(uint256 indexed farmId, uint256 allocation, IArcaneDispenser indexed dispenser, bool overwrite);
-    event UpdatePool(uint256 indexed farmId, uint256 lastRewardTime, uint256 lpSupply, uint256 accSigilPerShare);
+    event UpdateFarm(uint256 indexed farmId, uint256 lastRewardTime, uint256 lpSupply, uint256 accSigilPerShare);
     event Collection(address indexed weaver, uint256 indexed farmId, uint256 amount);
     event Deposit(address indexed weaver, uint256 indexed farmId, uint256 amount);
     event Withdraw(address indexed weaver, uint256 indexed farmId, uint256 amount);
     event EmergencyWithdraw(address indexed weaver, uint256 indexed farmId, uint256 amount);
-    event UpdateEmissionRate(address indexed account, uint256 _sigilPerSec);
+    event UpdateEmissionRate(address indexed account, uint256 sigilPerSec);
+    event SetDevAddress(address indexed account, address newAddress);
 
     constructor
     (ArcaneSigils _sigil, address _devAddr, address _treasuryAddr, address _investorAddr, uint256 _sigilPerSec, 
@@ -175,18 +180,18 @@ contract ArcaneWeaver is BoringOwnable, ReentrancyGuard
             {
                 uint256 secondsElapsed = block.timestamp.sub(farm.lastRewardTime);
                 uint256 sigilReward = secondsElapsed.mul(sigilPerSec).mul(farm.allocationPoints).div(totalAllocationPoints);
-
                 uint256 lpPercent = 1000 - devPercent - treasuryPercent - investorPercent;
+
                 sigil.mint(devAddr, sigilReward.mul(devPercent).div(1000));
                 sigil.mint(treasuryAddr, sigilReward.mul(treasuryPercent).div(1000));
                 sigil.mint(investorAddr, sigilReward.mul(investorPercent).div(1000));
                 sigil.mint(address(this), sigilReward.mul(lpPercent).div(1000));
 
-                farm.accSigilPerShare = farm.accSigilPerShare.add((sigilReward.mul(ACC_TOKEN_PRECISION).div(lpSupply)));               
+                farm.accSigilPerShare = farm.accSigilPerShare.add((sigilReward.mul(lpPercent).div(1000).mul(ACC_TOKEN_PRECISION).div(lpSupply)));               
             }
             farm.lastRewardTime = block.timestamp;
             arcaneFarms[farmId] = farm;
-            emit UpdatePool(farmId, farm.lastRewardTime, lpSupply, farm.accSigilPerShare);
+            emit UpdateFarm(farmId, farm.lastRewardTime, lpSupply, farm.accSigilPerShare);
         }
     }
 
@@ -263,16 +268,63 @@ contract ArcaneWeaver is BoringOwnable, ReentrancyGuard
         emit EmergencyWithdraw(msg.sender, farmId, amount);
     }
 
-    // function updateEmissionRate(uint256 _sigilPerSec) public onlyOwner 
-    // {
-    //     uint256 length = arcaneFarms.length - 1;
-    //     uint256[length] memory ids;
-    //     for (uint256 i = 0; i < arcaneFarms.length; ++i)
-    //     {
-    //         ids[i] = i;
-    //     } 
-    //     massUpdateFarms(ids);
-    //     sigilPerSec = _sigilPerSec;
-    //     emit UpdateEmissionRate(msg.sender, _sigilPerSec);
-    // }
+    function updateEmissionRate(uint256 _sigilPerSec) public onlyOwner 
+    {
+        uint256 count = arcaneFarms.length;
+        uint256[] memory ids = new uint256[](count);
+        for (uint256 i = 0; i < count; i++)
+        {
+            ids[i] = i;
+        }
+
+        massUpdateFarms(ids);
+        sigilPerSec = _sigilPerSec;
+        emit UpdateEmissionRate(msg.sender, _sigilPerSec);
+    }
+
+    function dev(address _devAddr) public 
+    {
+        require(msg.sender == devAddr, "dev: BE GONE!");
+        devAddr = _devAddr;
+        emit SetDevAddress(msg.sender, _devAddr);
+    }
+
+    function setDevPercent(uint256 _newDevPercent) public onlyOwner 
+    {
+        require(0 <= _newDevPercent && _newDevPercent <= 1000, "setDevPercent: invalid percent value");
+        require(treasuryPercent + _newDevPercent + investorPercent <= 1000, "setDevPercent: total percent over max");
+        devPercent = _newDevPercent;
+    }
+
+    function setTreasuryAddr(address _treasuryAddr) public 
+    {
+        require(msg.sender == treasuryAddr, "setTreasuryAddr: BE GONE!");
+        treasuryAddr = _treasuryAddr;
+    }
+
+    function setTreasuryPercent(uint256 _newTreasuryPercent) public onlyOwner 
+    {
+        require(0 <= _newTreasuryPercent && _newTreasuryPercent <= 1000, "setTreasuryPercent: invalid percent value");
+        require(
+            devPercent + _newTreasuryPercent + investorPercent <= 1000,
+            "setTreasuryPercent: total percent over max"
+        );
+        treasuryPercent = _newTreasuryPercent;
+    }
+
+    function setInvestorAddr(address _investorAddr) public 
+    {
+        require(msg.sender == investorAddr, "setInvestorAddr: BE GONE!");
+        investorAddr = _investorAddr;
+    }
+
+    function setInvestorPercent(uint256 _newInvestorPercent) public onlyOwner 
+    {
+        require(0 <= _newInvestorPercent && _newInvestorPercent <= 1000, "setInvestorPercent: invalid percent value");
+        require(
+            devPercent + _newInvestorPercent + treasuryPercent <= 1000,
+            "setInvestorPercent: total percent over max"
+        );
+        investorPercent = _newInvestorPercent;
+    }
 }

@@ -60,6 +60,64 @@ abstract contract Ownable is Context {
     }
 }
 
+contract BoringOwnableData {
+    address public owner;
+    address public pendingOwner;
+}
+
+contract BoringOwnable is BoringOwnableData {
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /// @notice `owner` defaults to msg.sender on construction.
+    constructor() {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), msg.sender);
+    }
+
+    /// @notice Transfers ownership to `newOwner`. Either directly or claimable by the new pending owner.
+    /// Can only be invoked by the current `owner`.
+    /// @param newOwner Address of the new owner.
+    /// @param direct True if `newOwner` should be set immediately. False if `newOwner` needs to use `claimOwnership`.
+    /// @param renounce Allows the `newOwner` to be `address(0)` if `direct` and `renounce` is True. Has no effect otherwise.
+    function transferOwnership(
+        address newOwner,
+        bool direct,
+        bool renounce
+    ) public onlyOwner {
+        if (direct) {
+            // Checks
+            require(newOwner != address(0) || renounce, "Ownable: zero address");
+
+            // Effects
+            emit OwnershipTransferred(owner, newOwner);
+            owner = newOwner;
+            pendingOwner = address(0);
+        } else {
+            // Effects
+            pendingOwner = newOwner;
+        }
+    }
+
+    /// @notice Needs to be called by `pendingOwner` to claim ownership.
+    function claimOwnership() public {
+        address _pendingOwner = pendingOwner;
+
+        // Checks
+        require(msg.sender == _pendingOwner, "Ownable: caller != pending owner");
+
+        // Effects
+        emit OwnershipTransferred(owner, _pendingOwner);
+        owner = _pendingOwner;
+        pendingOwner = address(0);
+    }
+
+    /// @notice Only allows the `owner` to execute the function.
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Ownable: caller is not the owner");
+        _;
+    }
+}
+
 contract ERC20 is Context, IERC20, IERC20Metadata {
     mapping(address => uint256) private _balances;
 
@@ -525,26 +583,64 @@ contract ArcaneSigils is ERC20("Arcane Sigils", "SIGIL"), Ownable {
     // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol
     // Which is copied and modified from COMPOUND:
     // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
+
+    /// @notice A record of each accounts delegate
     mapping(address => address) internal _delegates;
+
+    /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
         uint32 fromBlock;
         uint256 votes;
     }
+
+    /// @notice A record of votes checkpoints for each account, by index
     mapping(address => mapping(uint32 => Checkpoint)) public checkpoints;
+
+    /// @notice The number of checkpoints for each account
     mapping(address => uint32) public numCheckpoints;
+
+    /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
+
+    /// @notice The EIP-712 typehash for the delegation struct used by the contract
     bytes32 public constant DELEGATION_TYPEHASH =
         keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+
+    /// @notice A record of states for signing / validating signatures
     mapping(address => uint256) public nonces;
+
+    /// @notice An event thats emitted when an account changes its delegate
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+
+    /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
+
+    /**
+     * @notice Delegate votes from `msg.sender` to `delegatee`
+     * @param delegator The address to get delegatee for
+     */
     function delegates(address delegator) external view returns (address) {
         return _delegates[delegator];
     }
+
+    /**
+     * @notice Delegate votes from `msg.sender` to `delegatee`
+     * @param delegatee The address to delegate votes to
+     */
     function delegate(address delegatee) external {
         return _delegate(msg.sender, delegatee);
     }
+
+    /**
+     * @notice Delegates votes from signatory to `delegatee`
+     * @param delegatee The address to delegate votes to
+     * @param nonce The contract state required to match the signature
+     * @param expiry The time at which to expire the signature
+     * @param v The recovery byte of the signature
+     * @param r Half of the ECDSA signature pair
+     * @param s Half of the ECDSA signature pair
+     */
     function delegateBySig(
         address delegatee,
         uint256 nonce,
@@ -567,10 +663,24 @@ contract ArcaneSigils is ERC20("Arcane Sigils", "SIGIL"), Ownable {
         require(block.timestamp <= expiry, "SIGIL::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
+
+    /**
+     * @notice Gets the current votes balance for `account`
+     * @param account The address to get votes balance
+     * @return The number of current votes for `account`
+     */
     function getCurrentVotes(address account) external view returns (uint256) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
+
+    /**
+     * @notice Determine the prior number of votes for an account as of a block number
+     * @dev Block number must be a finalized block or else this function will revert to prevent misinformation.
+     * @param account The address of the account to check
+     * @param blockNumber The block number to get the vote balance at
+     * @return The number of votes the account had as of the given block
+     */
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint256) {
         require(blockNumber < block.number, "SIGIL::getPriorVotes: not yet determined");
 
@@ -679,7 +789,12 @@ interface IArcaneDispenser
 
     function rewardToken() external view returns (IERC20);
 }
-contract ArcaneWeaver is Ownable, ReentrancyGuard
+// Forked, merged and modified (slightly) from Trader Joe's joe-core repository found here
+// https://github.com/traderjoe-xyz/joe-core/tree/main/contracts
+// This is a merge of MasterChefV2 and MasterChefV3 contracts, it gives out a constant
+// number of SIGIL per block. It holds the minting rights for Arcane Sigil's, the GOTH
+// Token Networks governance token.
+contract ArcaneWeaver is BoringOwnable, ReentrancyGuard
 {
     // USINGS //
     using SafeMath for uint256;
@@ -722,12 +837,13 @@ contract ArcaneWeaver is Ownable, ReentrancyGuard
     // EVENTS //
     event FarmAdd(uint256 indexed farmId, uint256 allocation, IERC20 indexed lpToken, IArcaneDispenser indexed dispenser);
     event SetFarm(uint256 indexed farmId, uint256 allocation, IArcaneDispenser indexed dispenser, bool overwrite);
-    event UpdatePool(uint256 indexed farmId, uint256 lastRewardTime, uint256 lpSupply, uint256 accSigilPerShare);
+    event UpdateFarm(uint256 indexed farmId, uint256 lastRewardTime, uint256 lpSupply, uint256 accSigilPerShare);
     event Collection(address indexed weaver, uint256 indexed farmId, uint256 amount);
     event Deposit(address indexed weaver, uint256 indexed farmId, uint256 amount);
     event Withdraw(address indexed weaver, uint256 indexed farmId, uint256 amount);
     event EmergencyWithdraw(address indexed weaver, uint256 indexed farmId, uint256 amount);
-    event UpdateEmissionRate(address indexed account, uint256 _sigilPerSec);
+    event UpdateEmissionRate(address indexed account, uint256 sigilPerSec);
+    event SetDevAddress(address indexed account, address newAddress);
 
     constructor
     (ArcaneSigils _sigil, address _devAddr, address _treasuryAddr, address _investorAddr, uint256 _sigilPerSec, 
@@ -844,18 +960,18 @@ contract ArcaneWeaver is Ownable, ReentrancyGuard
             {
                 uint256 secondsElapsed = block.timestamp.sub(farm.lastRewardTime);
                 uint256 sigilReward = secondsElapsed.mul(sigilPerSec).mul(farm.allocationPoints).div(totalAllocationPoints);
-
                 uint256 lpPercent = 1000 - devPercent - treasuryPercent - investorPercent;
+
                 sigil.mint(devAddr, sigilReward.mul(devPercent).div(1000));
                 sigil.mint(treasuryAddr, sigilReward.mul(treasuryPercent).div(1000));
                 sigil.mint(investorAddr, sigilReward.mul(investorPercent).div(1000));
                 sigil.mint(address(this), sigilReward.mul(lpPercent).div(1000));
 
-                farm.accSigilPerShare = farm.accSigilPerShare.add((sigilReward.mul(ACC_TOKEN_PRECISION).div(lpSupply)));               
+                farm.accSigilPerShare = farm.accSigilPerShare.add((sigilReward.mul(lpPercent).div(1000).mul(ACC_TOKEN_PRECISION).div(lpSupply)));               
             }
             farm.lastRewardTime = block.timestamp;
             arcaneFarms[farmId] = farm;
-            emit UpdatePool(farmId, farm.lastRewardTime, lpSupply, farm.accSigilPerShare);
+            emit UpdateFarm(farmId, farm.lastRewardTime, lpSupply, farm.accSigilPerShare);
         }
     }
 
@@ -932,16 +1048,63 @@ contract ArcaneWeaver is Ownable, ReentrancyGuard
         emit EmergencyWithdraw(msg.sender, farmId, amount);
     }
 
-    // function updateEmissionRate(uint256 _sigilPerSec) public onlyOwner 
-    // {
-    //     uint256 length = arcaneFarms.length - 1;
-    //     uint256[length] memory ids;
-    //     for (uint256 i = 0; i < arcaneFarms.length; ++i)
-    //     {
-    //         ids[i] = i;
-    //     } 
-    //     massUpdateFarms(ids);
-    //     sigilPerSec = _sigilPerSec;
-    //     emit UpdateEmissionRate(msg.sender, _sigilPerSec);
-    // }
+    function updateEmissionRate(uint256 _sigilPerSec) public onlyOwner 
+    {
+        uint256 count = arcaneFarms.length;
+        uint256[] memory ids = new uint256[](count);
+        for (uint256 i = 0; i < count; i++)
+        {
+            ids[i] = i;
+        }
+
+        massUpdateFarms(ids);
+        sigilPerSec = _sigilPerSec;
+        emit UpdateEmissionRate(msg.sender, _sigilPerSec);
+    }
+
+    function dev(address _devAddr) public 
+    {
+        require(msg.sender == devAddr, "dev: BE GONE!");
+        devAddr = _devAddr;
+        emit SetDevAddress(msg.sender, _devAddr);
+    }
+
+    function setDevPercent(uint256 _newDevPercent) public onlyOwner 
+    {
+        require(0 <= _newDevPercent && _newDevPercent <= 1000, "setDevPercent: invalid percent value");
+        require(treasuryPercent + _newDevPercent + investorPercent <= 1000, "setDevPercent: total percent over max");
+        devPercent = _newDevPercent;
+    }
+
+    function setTreasuryAddr(address _treasuryAddr) public 
+    {
+        require(msg.sender == treasuryAddr, "setTreasuryAddr: BE GONE!");
+        treasuryAddr = _treasuryAddr;
+    }
+
+    function setTreasuryPercent(uint256 _newTreasuryPercent) public onlyOwner 
+    {
+        require(0 <= _newTreasuryPercent && _newTreasuryPercent <= 1000, "setTreasuryPercent: invalid percent value");
+        require(
+            devPercent + _newTreasuryPercent + investorPercent <= 1000,
+            "setTreasuryPercent: total percent over max"
+        );
+        treasuryPercent = _newTreasuryPercent;
+    }
+
+    function setInvestorAddr(address _investorAddr) public 
+    {
+        require(msg.sender == investorAddr, "setInvestorAddr: BE GONE!");
+        investorAddr = _investorAddr;
+    }
+
+    function setInvestorPercent(uint256 _newInvestorPercent) public onlyOwner 
+    {
+        require(0 <= _newInvestorPercent && _newInvestorPercent <= 1000, "setInvestorPercent: invalid percent value");
+        require(
+            devPercent + _newInvestorPercent + treasuryPercent <= 1000,
+            "setInvestorPercent: total percent over max"
+        );
+        investorPercent = _newInvestorPercent;
+    }
 }

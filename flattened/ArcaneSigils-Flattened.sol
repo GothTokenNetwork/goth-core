@@ -304,7 +304,6 @@ library SafeMath {
     } }
 }
 
-// Arcane Sigils with Governance.
 contract ArcaneSigils is ERC20("Arcane Sigils", "SIGIL"), Ownable {
     using SafeMath for uint256;
 

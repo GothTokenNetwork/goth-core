@@ -3,7 +3,7 @@ const { ethers } = require('hardhat')
 const { delay } = require('lodash')
 const fs = require('fs')
 
-function delay2 (n) {
+function delay (n) {
   return new Promise(function (resolve) {
     setTimeout(resolve, n * 1000)
   })

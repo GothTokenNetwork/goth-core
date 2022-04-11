@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.2;
-
+pragma solidity ^0.8.0;
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
@@ -10,6 +9,7 @@ abstract contract Context {
         return msg.data;
     }
 }
+
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -448,41 +448,271 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {}
-}
-abstract contract ERC20Burnable is Context, ERC20 {
+}library SafeMath {
     /**
-     * @dev Destroys `amount` tokens from the caller.
+     * @dev Returns the addition of two unsigned integers, with an overflow flag.
      *
-     * See {ERC20-_burn}.
+     * _Available since v3.4._
      */
-    function burn(uint256 amount) public virtual {
-        _burn(_msgSender(), amount);
+    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            uint256 c = a + b;
+            if (c < a) return (false, 0);
+            return (true, c);
+        }
     }
 
     /**
-     * @dev Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
+     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
      *
-     * See {ERC20-_burn} and {ERC20-allowance}.
+     * _Available since v3.4._
+     */
+    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b > a) return (false, 0);
+            return (true, a - b);
+        }
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+            // benefit is lost if 'b' is also tested.
+            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+            if (a == 0) return (true, 0);
+            uint256 c = a * b;
+            if (c / a != b) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the division of two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a / b);
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a % b);
+        }
+    }
+
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
      *
      * Requirements:
      *
-     * - the caller must have allowance for ``accounts``'s tokens of at least
-     * `amount`.
+     * - Addition cannot overflow.
      */
-    function burnFrom(address account, uint256 amount) public virtual {
-        _spendAllowance(account, _msgSender(), amount);
-        _burn(account, amount);
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a + b;
     }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a - b;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a * b;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator.
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a / b;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a % b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {trySub}.
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b <= a, errorMessage);
+            return a - b;
+        }
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a / b;
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting with custom message when dividing by zero.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryMod}.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a % b;
+        }
+    }
+
+    function sqrt(uint256 n) internal pure returns (uint256) { unchecked {
+        if (n > 0) {
+            uint256 x = n / 2 + 1;
+            uint256 y = (x + n / x) / 2;
+            while (x > y) {
+                x = y;
+                y = (x + n / x) / 2;
+            }
+            return x;
+        }
+        return 0;
+    } }
 }
-// Everything has a past, the GOTH Token Network started out as a seed
-// that knew not its future. Alas that seed needs to be cast away to
-// bring life to the tree that will grow to reach the stars.
-// IE. We scrapped this one and made a new one!!  
-contract OldGothToken is ERC20, ERC20Burnable 
-{
-    constructor() ERC20("GOTH Token", "GOTH") 
-    {
-        _mint(msg.sender, 1000000000000 * 10 ** decimals());
+
+// SigilStake is a modified version of JoeBar.sol that is from Trader Joe's GitHub joe-core repository, found here;
+// https://github.com/traderjoe-xyz/joe-core/blob/main/contracts/JoeBar.sol.
+//
+// This contract handles swapping to and from xSIGIL, SIGIL's staking token.
+contract SigilStake is ERC20("X SIGIL", "xSIGIL") {
+    using SafeMath for uint256;
+    IERC20 public sigil;
+
+    // Define the SIGIL token contract
+    constructor(IERC20 _sigil) {
+        sigil = _sigil;
+    }
+
+    // Locks SIGIL and mints xSIGIL
+    function enter(uint256 _amount) public {
+        // Gets the amount of SIGIL locked in the contract
+        uint256 totalSigil = sigil.balanceOf(address(this));
+        // Gets the amount of xSIGIL in existence
+        uint256 totalShares = totalSupply();
+        // If no xSIGIL exists, mint it 1:1 to the amount put in
+        if (totalShares == 0 || totalSigil == 0) {
+            _mint(msg.sender, _amount);
+        }
+        // Calculate and mint the amount of xSIGIL the SIGIL is worth. The ratio will change overtime, as xSIGIL is burned/minted and SIGIL deposited + gained from fees / withdrawn.
+        else {
+            uint256 what = _amount.mul(totalShares).div(totalSigil);
+            _mint(msg.sender, what);
+        }
+        // Lock the SIGIL in the contract
+        sigil.transferFrom(msg.sender, address(this), _amount);
+    }
+
+    // Unlocks the staked + gained SIGIL and burns xSIGIL
+    function leave(uint256 _share) public {
+        // Gets the amount of xSIGIL in existence
+        uint256 totalShares = totalSupply();
+        // Calculates the amount of SIGIL the xSIGIL is worth
+        uint256 what = _share.mul(sigil.balanceOf(address(this))).div(totalShares);
+        _burn(msg.sender, _share);
+        sigil.transfer(msg.sender, what);
     }
 }
