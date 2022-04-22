@@ -12,7 +12,7 @@ function delay (n) {
 async function main() {
     ;[owner, addr1, addr2, addr3, addr4, ...addrs] = await ethers.getSigners()
     var options = { value: ethers.BigNumber.from('5000000000000000000000000'), gasPrice: 250000000000, gasLimit: 30000000 }
-    var options2 = { gasPrice: 250000000000, gasLimit: 30000000 }
+    var options = { gasPrice: 2500000000, gasLimit: 30000000 }
     var options3 = { value: ethers.BigNumber.from('20000000000000000000000'),  gasPrice: 250000000000, gasLimit: 30000000 }
     var options4 = { value: ethers.BigNumber.from('750000000000000000000000'),  gasPrice: 250000000000, gasLimit: 30000000 }
 
@@ -30,8 +30,9 @@ async function main() {
     const test2Wallet = new ethers.Wallet(addr2Key, ethers.provider);
     const test3Wallet = new ethers.Wallet(addr3Key, ethers.provider);
 
+    var options = { gasPrice: 2500000000, gasLimit: 30000000 }
     const wavaxSource = await ethers.getContractFactory('contracts/swap/WAVAX.sol:WAVAX')
-    const wavaxContract = await wavaxSource.deploy();
+    const wavaxContract = await wavaxSource.deploy(options);
 
     const oldGothSource = await ethers.getContractFactory('contracts/swap/OldGothToken.sol:OldGothToken')
     const oldGothContract = await oldGothSource.deploy();
