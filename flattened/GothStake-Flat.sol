@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.7;
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
@@ -10,7 +10,330 @@ abstract contract Context {
         return msg.data;
     }
 }
+abstract contract Ownable is Context {
+    address private _owner;
 
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor() {
+        _transferOwnership(_msgSender());
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        _transferOwnership(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
+library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            uint256 c = a + b;
+            if (c < a) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b > a) return (false, 0);
+            return (true, a - b);
+        }
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+            // benefit is lost if 'b' is also tested.
+            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+            if (a == 0) return (true, 0);
+            uint256 c = a * b;
+            if (c / a != b) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the division of two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a / b);
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a % b);
+        }
+    }
+
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     *
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a + b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a - b;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a * b;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator.
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a / b;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a % b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {trySub}.
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b <= a, errorMessage);
+            return a - b;
+        }
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a / b;
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting with custom message when dividing by zero.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryMod}.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a % b;
+        }
+    }
+
+    function sqrt(uint256 n) internal pure returns (uint256) { unchecked {
+        if (n > 0) {
+            uint256 x = n / 2 + 1;
+            uint256 y = (x + n / x) / 2;
+            while (x > y) {
+                x = y;
+                y = (x + n / x) / 2;
+            }
+            return x;
+        }
+        return 0;
+    } }
+}
+abstract contract ReentrancyGuard {
+    // Booleans are more expensive than uint256 or any type that takes up a full
+    // word because each write operation emits an extra SLOAD to first read the
+    // slot's contents, replace the bits taken up by the boolean, and then write
+    // back. This is the compiler's defense against contract upgrades and
+    // pointer aliasing, and it cannot be disabled.
+
+    // The values being non-zero value makes deployment a bit more expensive,
+    // but in exchange the refund on every call to nonReentrant will be lower in
+    // amount. Since refunds are capped to a percentage of the total
+    // transaction's gas, it is best to keep them low in cases like this one, to
+    // increase the likelihood of the full refund coming into effect.
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+
+    uint256 private _status;
+
+    constructor() {
+        _status = _NOT_ENTERED;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and making it call a
+     * `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        // On the first call to nonReentrant, _notEntered will be true
+        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+
+        // Any calls to nonReentrant after this point will fail
+        _status = _ENTERED;
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see
+        // https://eips.ethereum.org/EIPS/eip-2200)
+        _status = _NOT_ENTERED;
+    }
+}
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -449,271 +772,415 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {}
-}library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            uint256 c = a + b;
-            if (c < a) return (false, 0);
-            return (true, c);
+}
+contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard 
+{
+    using SafeMath for uint256;
+
+    mapping(address => uint256) private _balances;
+
+    mapping(address => mapping(address => uint256)) private _allowances;
+
+    uint256 private _totalSupply;
+    uint256 private _maxSupply = 1_000_000_000e18;
+
+    string private _name;
+    string private _symbol;
+
+    IERC20 public immutable GOTHV1;
+    uint256 private swapPeriodEnd;
+
+    event SwapOldGOTH(address account, uint256 oldGothBurnt, uint256 newGothMinted);
+
+    constructor(IERC20 _gothV1) 
+    {
+        _name = "GOTH Token v2";
+        _symbol = "GOTH";
+        GOTHV1 = _gothV1;
+        swapPeriodEnd = block.timestamp + 31_540_000;
+        _mint(msg.sender, 100_000_000e18);
+    }
+
+    function name() public view virtual override returns (string memory) 
+    {
+        return _name;
+    }
+
+    function symbol() public view virtual override returns (string memory) 
+    {
+        return _symbol;
+    }
+
+    function decimals() public view virtual override returns (uint8) 
+    {
+        return 18;
+    }
+
+    function totalSupply() public view virtual override returns (uint256) 
+    {
+        return _totalSupply;
+    }
+
+    function maxSupply() public view virtual returns (uint256) 
+    {
+        return _maxSupply;
+    }
+
+    function balanceOf(address account) public view virtual override returns (uint256) 
+    {
+        return _balances[account];
+    }
+
+    function swapOldGOTH (uint256 amount) external nonReentrant
+    {
+        require(GOTHV1.balanceOf(msg.sender) >= amount, "swapOldGOTH: not enough old GOTH");
+        require(block.timestamp < swapPeriodEnd, "swapOldGOTH: the time window for swapping old GOTH to GOTH v2 has ended");
+        
+        GOTHV1.transferFrom(msg.sender, address(1), amount);
+
+
+        uint256 newAmount = amount.add(amount.div(10)).div(1000);
+        _mint(msg.sender, newAmount);
+
+        emit SwapOldGOTH(msg.sender, amount, newAmount);
+    } 
+
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool)
+    {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    function burn(uint256 amount) public virtual returns (bool)
+    {
+        _burn(_msgSender(), amount);
+        return true;
+    }
+
+    function allowance(address owner, address spender) public view virtual override returns (uint256) 
+    {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 amount) public virtual override returns (bool) 
+    {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) 
+    {
+        _transfer(sender, recipient, amount);
+
+        uint256 currentAllowance = _allowances[sender][_msgSender()];
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        unchecked 
+        {
+            _approve(sender, _msgSender(), currentAllowance - amount);
         }
+
+        return true;
     }
 
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b > a) return (false, 0);
-            return (true, a - b);
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) 
+    {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
+        return true;
+    }
+
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) 
+    {
+        uint256 currentAllowance = _allowances[_msgSender()][spender];
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        unchecked 
+        {
+            _approve(_msgSender(), spender, currentAllowance - subtractedValue);
         }
+
+        return true;
     }
 
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-            // benefit is lost if 'b' is also tested.
-            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-            if (a == 0) return (true, 0);
-            uint256 c = a * b;
-            if (c / a != b) return (false, 0);
-            return (true, c);
+    function _transfer(address sender, address recipient, uint256 amount) internal virtual 
+    {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _beforeTokenTransfer(sender, recipient, amount);
+
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+        unchecked 
+        {
+            _balances[sender] = senderBalance - amount;
         }
+        _balances[recipient] += amount;
+
+        emit Transfer(sender, recipient, amount);
+
+        _afterTokenTransfer(sender, recipient, amount);
     }
 
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a / b);
+    function mint (address account, uint256 amount) public onlyOwner returns (bool)
+    {
+        _mint(account, amount);
+        return true;
+    }
+
+    function _mint(address account, uint256 amount) internal virtual
+    {
+        require(account != address(0), "ERC20: mint to the zero address");
+        require(_maxSupply.sub(_totalSupply) >= amount, "ERC20: max supply reached");
+
+        _beforeTokenTransfer(address(0), account, amount);
+
+        _totalSupply += amount;
+        _balances[account] += amount;
+        emit Transfer(address(0), account, amount);
+
+        _afterTokenTransfer(address(0), account, amount);
+    }
+
+    function _burn(address account, uint256 amount) internal virtual 
+    {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _beforeTokenTransfer(account, address(0), amount);
+
+        uint256 accountBalance = _balances[account];
+        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        unchecked 
+        {
+            _balances[account] = accountBalance - amount;
         }
+        _totalSupply -= amount;
+
+        emit Transfer(account, address(0), amount);
+
+        _afterTokenTransfer(account, address(0), amount);
     }
 
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a % b);
-        }
+    function _approve(address owner, address spender, uint256 amount) internal virtual 
+    {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
     }
 
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a + b;
-    }
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a * b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator.
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b <= a, errorMessage);
-            return a - b;
-        }
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a / b;
-        }
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a % b;
-        }
-    }
-
-    function sqrt(uint256 n) internal pure returns (uint256) { unchecked {
-        if (n > 0) {
-            uint256 x = n / 2 + 1;
-            uint256 y = (x + n / x) / 2;
-            while (x > y) {
-                x = y;
-                y = (x + n / x) / 2;
-            }
-            return x;
-        }
-        return 0;
-    } }
+    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
 }
 
-// GothStake is a modified version of JoeBar.sol that is from Trader Joe's GitHub joe-core repository, found here;
-// https://github.com/traderjoe-xyz/joe-core/blob/main/contracts/JoeBar.sol.
-//
-// This contract handles swapping to and from bGOTH, GOTH's staking token.
-contract GothStake is ERC20("GOTH Bits", "bGOTH") {
+contract GothStake is ERC20("GOTH Bits", "bGOTH"), Ownable, ReentrancyGuard {
     using SafeMath for uint256;
-    IERC20 public goth;
 
-    // Define the GOTH token contract
-    constructor(IERC20 _goth) {
+    GothTokenV2 public goth;
+
+    uint256 public enterFeeMod; // (amount * 1e18) / enterFeeMod = Actual Fee
+    uint256 public leaveFee; // Static
+
+    uint256 public mintRate; // 0-15
+
+    uint256 public treasuryPercent; // Default - 100
+    address public treasuryAddress;
+    uint256 public teamPercent; // Default - 100
+    address public teamAddress;
+
+    address public feeAddress;
+
+    mapping(address => uint256) public lastClaimTime;
+    uint256 public totalStaked;
+
+    event ChangeGothOwner (address newOwner);
+    event SetEnterFeeMod (uint256 newFeeMod);
+    event SetLeaveFee (uint256 newLeavefee);
+    event SetMintRate (uint256 newMintRate);
+    event SetTreasuryAddress (address newAddress);
+    event SetTeamAddress (address newAddress);
+    event SetFeeAddress (address feeAddress);
+    event Enter (address indexed account, uint256 share);
+    event Leave (address indexed account, uint256 share);
+    event Gather (address indexed account, uint256 amount);
+
+    constructor (GothTokenV2 _goth)
+    {
         goth = _goth;
+        enterFeeMod = 2.5e8;
+        leaveFee = 1.5e16;
+        mintRate = 10;
+        treasuryPercent = 100;
+        teamPercent = 100;
+        treasuryAddress = 0xDCb9C36998703ae5CEE2ec07Bef76e61A571906D;
+        teamAddress = 0x8A1eA60Fe793FE009078A74d6167a8EeaD25f7F1;
+        feeAddress = 0xbD2171Ea845D383e731ab29eDbCDd6f121305be3;
     }
 
-    // Locks GOTH and mints bGOTH
-    function enter(uint256 _amount) public {
-        // Gets the amount of GOTH locked in the contract
-        uint256 totalGoth = goth.balanceOf(address(this));
-        // Gets the amount of bGOTH in existence
-        uint256 totalShares = totalSupply();
-        // If no bGOTH exists, mint it 1:1 to the amount put in
-        if (totalShares == 0 || totalGoth == 0) {
-            _mint(msg.sender, _amount);
-        }
-        // Calculate and mint the amount of bGOTH the GOTH is worth. The ratio will change overtime, as bGOTH is burned/minted and GOTH deposited + gained from fees / withdrawn.
-        else {
-            uint256 what = _amount.mul(totalShares).div(totalGoth);
-            _mint(msg.sender, what);
-        }
-        // Lock the GOTH in the contract
-        goth.transferFrom(msg.sender, address(this), _amount);
+    function changeGothOwner (address newOwner) public onlyOwner
+    {
+        require(newOwner != address(0) || newOwner != address(1), "changeGothOwner: cannot be zero addresses");
+        goth.transferOwnership(newOwner);
+        emit ChangeGothOwner(newOwner);
     }
 
-    // Unlocks the staked + gained GOTH and burns bGOTH
-    function leave(uint256 _share) public {
-        // Gets the amount of bGOTH in existence
-        uint256 totalShares = totalSupply();
-        // Calculates the amount of GOTH the bGOTH is worth
-        uint256 what = _share.mul(goth.balanceOf(address(this))).div(totalShares);
-        _burn(msg.sender, _share);
-        goth.transfer(msg.sender, what);
+    function setEnterFeeMod (uint256 newFeeMod) public onlyOwner
+    {
+        require(newFeeMod <= 1e13 && newFeeMod >= 1e8, "setEnterFeeMod: enter fee mod too high");
+        enterFeeMod = newFeeMod;
+        emit SetEnterFeeMod(newFeeMod);
     }
+
+    function setLeaveFee (uint256 newLeaveFee) public onlyOwner
+    {
+        require(newLeaveFee <= 1e17, "setLeaveFee: leave fee too high");
+        leaveFee = newLeaveFee;
+        emit SetLeaveFee(newLeaveFee);
+    }
+
+    function setTreasuryAddress (address newTreasury) public onlyOwner
+    {
+        require(newTreasury != address(0) || newTreasury != address(1), "setTreasuryAddress: cannot be zero addresses");
+        treasuryAddress = newTreasury;
+        emit SetTreasuryAddress(newTreasury);
+    }
+
+    function setTeamAddress (address newTeam) public onlyOwner
+    {
+        require(newTeam != address(0) || newTeam != address(1), "setTeamAddress: cannot be zero addresses");
+        teamAddress = newTeam;
+        emit SetTreasuryAddress(newTeam);
+    }
+
+    function setFeeAddress (address newFeeAddress) public onlyOwner
+    {
+        require(newFeeAddress != address(0) || newFeeAddress != address(1), "setFeeAddress: cannot be zero addresses");
+        feeAddress = newFeeAddress;
+        emit SetFeeAddress(newFeeAddress);
+    }
+
+    function setMintRate (uint256 newMintRate) public onlyOwner
+    {
+        require(newMintRate <= 15, "setMintRate: mint rate too high");
+        mintRate = newMintRate;
+        emit SetMintRate(newMintRate);    
+    }
+
+    function mintReward (address account, uint256 share) internal 
+    {
+        // Calculate the time that has passed between the users last claim and the current block.
+        uint256 timeElapsed = block.timestamp.sub(lastClaimTime[account]);
+
+        // Get the percentage of GOTH to be minted to stakers
+        uint256 allocation = 1000 - treasuryPercent - teamPercent;
+
+        // We calculate total mint amounts for the pool, team and treasury, mint rate is not in wei
+        // format, so we multiply it by 1e18 which moves the decimals 18 places to the required number
+        // respresented in wei, this also provides precision. Additionally, since team and treasury 
+        // are not further divided we multiply it by the time elapsed to get the correct mint amount
+        // for those allocations.
+        uint256 poolShare = mintRate.mul(allocation).div(1000);
+        uint256 teamShare = mintRate.mul(1e18).mul(teamPercent).div(1000).mul(timeElapsed);
+        uint256 treasuryShare = mintRate.mul(1e18).mul(treasuryPercent).div(1000).mul(timeElapsed);
+
+        // Here, we calculate the stakers(user) share of the pool using the previously calculated pool allocation.
+        // We multiplty the user share by 1e36, to ensure token precision, then we divide it by the total amount 
+        // of GOTH within the pool and multiply it further by 100 to find the stakers share, as percentage
+        // of the pool.
+        uint256 stakerShare = share.mul(1e36).div(totalStaked).mul(100);
+        // We calculate the reward amount by multiplying the pool share by the stakers share, then divide it by 100
+        // and then 1e18, we could represent both of those divisions within one number, but this is clearer to see
+        // that the 100 is a process of finding a percentage and then the 1e18 is the process of bringing the number back
+        // down to the correct value after multiplying for token precision, this is then multiplied by the time elapsed
+        // since last claim. 
+        uint256 reward = poolShare.mul(stakerShare).div(100).div(1e18).mul(timeElapsed);
+
+        // Each of the share amounts are minted, with the user amount being sent to their address, and the team
+        // and treasury respectively.
+        goth.mint(account, reward);
+        goth.mint(teamAddress, teamShare);
+        goth.mint(treasuryAddress, treasuryShare);
+
+        // The users last claim time is updated with the current block timestamp.
+        lastClaimTime[account] = block.timestamp;
+    }
+
+    function enter(uint256 amount) public nonReentrant payable
+    {
+        require(msg.value >= amount.div(enterFeeMod), "enter: supplied fee too little");
+        require(goth.balanceOf(msg.sender) >= amount, "enter: not enough GOTH");
+
+        // Check to see if the sender has GOTH staked already and if they do it will
+        // gather the accrued rewards up until this point, this is to prevent a user from
+        // entering the pool to boost their share for the sole purpose of gathering the reward
+        // then withdrawing again.
+        if (balanceOf(msg.sender) > 0)
+        {
+            mintReward(msg.sender, balanceOf(msg.sender));
+        }
+
+        // bGOTH is minted 1:1 to entered GOTH
+        _mint(msg.sender, amount);
+        goth.transferFrom(msg.sender, address(this), amount);    
+        totalStaked = totalStaked.add(amount);
+
+        // Users last claim time set to the current block timestamp
+        lastClaimTime[msg.sender] = block.timestamp;
+
+        emit Enter(msg.sender, amount);
+    }
+
+    function leave(uint256 share) public nonReentrant payable
+    {
+        require(msg.value >= leaveFee, "leave: supplied fee too little");
+        require(balanceOf(msg.sender) >= share, "leave: not enough bGOTH");
+
+        // We can remove part of, or all of the share. This is also taken into consideration
+        // when minting the users reward based on how much they are removing from the pool.
+        if (share == 0)
+        {
+            mintReward(msg.sender, balanceOf(msg.sender));
+        }
+        else
+        {
+            mintReward(msg.sender, balanceOf(msg.sender));
+
+            _burn(msg.sender, share);
+            goth.transfer(msg.sender, share);
+
+            // We update total staked in the pool here, we do this because the balance of the account 
+            // might be different from the total actually entered by stakers, this would mess with the 
+            // rewards in a negative way.
+            totalStaked = totalStaked.sub(share);
+
+            emit Leave(msg.sender, share);
+        }
+    }
+
+    // This calculates a users pending rewards without costing gas, it uses the same logic as the
+    // mint reward function, but does not change the state of the contract.
+    function accruedReward (address account) external view returns (uint256)
+    {
+        uint256 timeElapsed = block.timestamp.sub(lastClaimTime[account]);
+
+        uint256 allocation = 1000 - treasuryPercent - teamPercent;
+
+        uint256 poolShare = mintRate.mul(allocation).div(1000);
+
+        uint256 stakerShare = balanceOf(account).mul(1e36).div(totalStaked).mul(100);
+        uint256 reward = poolShare.mul(stakerShare).div(100).div(1e18).mul(timeElapsed);
+
+        return reward;
+    }
+
+    // this function can only be called by the owner, and will withdraw all the avax at this contract
+    // address and send it to the address defined by the feeAddress property within this contract.
+    function withdrawFees () external onlyOwner
+    {
+        (bool sent, bytes memory data) = feeAddress.call{value: address(this).balance}("");
+        require(sent, "withdrawFees: withdraw failed");
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
 }

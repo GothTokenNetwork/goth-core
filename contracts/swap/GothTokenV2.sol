@@ -1,310 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
-    }
-}
-
-abstract contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor() {
-        _transferOwnership(_msgSender());
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        _transferOwnership(address(0));
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address newOwner) internal virtual {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-}
-
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            uint256 c = a + b;
-            if (c < a) return (false, 0);
-            return (true, c);
-        }
-    }
-
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b > a) return (false, 0);
-            return (true, a - b);
-        }
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-            // benefit is lost if 'b' is also tested.
-            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-            if (a == 0) return (true, 0);
-            uint256 c = a * b;
-            if (c / a != b) return (false, 0);
-            return (true, c);
-        }
-    }
-
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a / b);
-        }
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a % b);
-        }
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a + b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a * b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator.
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b <= a, errorMessage);
-            return a - b;
-        }
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a / b;
-        }
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a % b;
-        }
-    }
-
-    function sqrt(uint256 n) internal pure returns (uint256) { unchecked {
-        if (n > 0) {
-            uint256 x = n / 2 + 1;
-            uint256 y = (x + n / x) / 2;
-            while (x > y) {
-                x = y;
-                y = (x + n / x) / 2;
-            }
-            return x;
-        }
-        return 0;
-    } }
-}
-
+import "../utils/Context.sol";
+import "../utils/Ownable.sol";
+import "../utils/SafeMath.sol";
 import "../utils/ReentrancyGuard.sol";
 import "../erc20/IERC20.sol";
 import "../erc20/IERC20Metadata.sol";
 
-// GOTH v2 signifies a true growth, the contraints of GOTH v1 were too much.
-// With this new and improved version we have more control over the supply and how
-// and where it is used. There is a built in swap function that will be active for
-// 1 year, and it will allow GOTH v1 holders to, SHAZAM, convert it for GOTH v2.
-// The max supply has been reduced from 1 trillion to 1 billion and awards those
-// that swap to GOTH v2 a 10% increase on what they receive.
 contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard 
 {
     using SafeMath for uint256;
@@ -314,7 +17,7 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
     mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 private _totalSupply;
-    uint256 public maxSupply = 1_000_000_000e18;
+    uint256 private _maxSupply = 1_000_000_000e18;
 
     string private _name;
     string private _symbol;
@@ -330,6 +33,7 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         _symbol = "GOTH";
         GOTHV1 = _gothV1;
         swapPeriodEnd = block.timestamp + 31_540_000;
+        _mint(msg.sender, 100_000_000e18);
     }
 
     function name() public view virtual override returns (string memory) 
@@ -352,16 +56,16 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         return _totalSupply;
     }
 
+    function maxSupply() public view virtual returns (uint256) 
+    {
+        return _maxSupply;
+    }
+
     function balanceOf(address account) public view virtual override returns (uint256) 
     {
         return _balances[account];
     }
 
-    // Uses nonReentrant modifier to prevent f'ery, checks to see if the sender has the 
-    // required amount of GOTH v1 and checks to see if the time period for swapping has
-    // not been passed. When both requirements are satisifed it transfers the old GOTH 
-    // from the senders account to a burn address then mints the new GOTH v2 with 10%
-    // added to the senders address.
     function swapOldGOTH (uint256 amount) external nonReentrant
     {
         require(GOTHV1.balanceOf(msg.sender) >= amount, "swapOldGOTH: not enough old GOTH");
@@ -369,8 +73,9 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         
         GOTHV1.transferFrom(msg.sender, address(1), amount);
 
-        uint256 newAmount = amount + amount.div(10);
-        _mint(msg.sender, newAmount.div(1000));
+
+        uint256 newAmount = amount.add(amount.div(10)).div(1000);
+        _mint(msg.sender, newAmount);
 
         emit SwapOldGOTH(msg.sender, amount, newAmount);
     } 
@@ -450,15 +155,16 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function mint (address account, uint256 amount) public onlyOwner
+    function mint (address account, uint256 amount) public onlyOwner returns (bool)
     {
         _mint(account, amount);
+        return true;
     }
 
     function _mint(address account, uint256 amount) internal virtual
     {
         require(account != address(0), "ERC20: mint to the zero address");
-        require(_totalSupply.add(amount) <= maxSupply, "ERC20: max supply reached");
+        require(_maxSupply.sub(_totalSupply) >= amount, "ERC20: max supply reached");
 
         _beforeTokenTransfer(address(0), account, amount);
 

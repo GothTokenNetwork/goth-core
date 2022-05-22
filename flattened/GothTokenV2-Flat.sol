@@ -10,7 +10,6 @@ abstract contract Context {
         return msg.data;
     }
 }
-
 abstract contract Ownable is Context {
     address private _owner;
 
@@ -68,7 +67,6 @@ abstract contract Ownable is Context {
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 }
-
 library SafeMath {
     /**
      * @dev Returns the addition of two unsigned integers, with an overflow flag.
@@ -294,7 +292,6 @@ library SafeMath {
         return 0;
     } }
 }
-
 abstract contract ReentrancyGuard {
     // Booleans are more expensive than uint256 or any type that takes up a full
     // word because each write operation emits an extra SLOAD to first read the
@@ -337,7 +334,6 @@ abstract contract ReentrancyGuard {
         _status = _NOT_ENTERED;
     }
 }
-
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -412,7 +408,6 @@ interface IERC20 {
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
-
 interface IERC20Metadata is IERC20 {
     /**
      * @dev Returns the name of the token.
@@ -430,12 +425,6 @@ interface IERC20Metadata is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-// GOTH v2 signifies true growth, the contraints of GOTH v1 were too much.
-// With this new and improved version we have more control over the supply and how
-// and where it is used. There is a built in swap function that will be active for
-// 1 year, and it will allow GOTH v1 holders to, SHAZAM, convert it for GOTH v2.
-// The max supply has been reduced from 1 trillion to 1 billion and awards those
-// that swap to GOTH v2 a 10% increase on what they receive.
 contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard 
 {
     using SafeMath for uint256;
@@ -445,7 +434,7 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
     mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 private _totalSupply;
-    uint256 public maxSupply = 1_000_000_000e18;
+    uint256 private _maxSupply = 1_000_000_000e18;
 
     string private _name;
     string private _symbol;
@@ -461,6 +450,7 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         _symbol = "GOTH";
         GOTHV1 = _gothV1;
         swapPeriodEnd = block.timestamp + 31_540_000;
+        _mint(msg.sender, 100_000_000e18);
     }
 
     function name() public view virtual override returns (string memory) 
@@ -483,16 +473,16 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         return _totalSupply;
     }
 
+    function maxSupply() public view virtual returns (uint256) 
+    {
+        return _maxSupply;
+    }
+
     function balanceOf(address account) public view virtual override returns (uint256) 
     {
         return _balances[account];
     }
 
-    // Uses nonReentrant modifier to prevent f'ery, checks to see if the sender has the 
-    // required amount of GOTH v1 and checks to see if the time period for swapping has
-    // not been passed. When both requirements are satisifed it transfers the old GOTH 
-    // from the senders account to a burn address then mints the new GOTH v2 with 10%
-    // added to the senders address.
     function swapOldGOTH (uint256 amount) external nonReentrant
     {
         require(GOTHV1.balanceOf(msg.sender) >= amount, "swapOldGOTH: not enough old GOTH");
@@ -500,8 +490,9 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         
         GOTHV1.transferFrom(msg.sender, address(1), amount);
 
-        uint256 newAmount = amount + amount.div(10);
-        _mint(msg.sender, newAmount.div(1000));
+
+        uint256 newAmount = amount.add(amount.div(10)).div(1000);
+        _mint(msg.sender, newAmount);
 
         emit SwapOldGOTH(msg.sender, amount, newAmount);
     } 
@@ -581,15 +572,16 @@ contract GothTokenV2 is Ownable, IERC20, IERC20Metadata, ReentrancyGuard
         _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function mint (address account, uint256 amount) public onlyOwner
+    function mint (address account, uint256 amount) public onlyOwner returns (bool)
     {
         _mint(account, amount);
+        return true;
     }
 
     function _mint(address account, uint256 amount) internal virtual
     {
         require(account != address(0), "ERC20: mint to the zero address");
-        require(_totalSupply.add(amount) <= maxSupply, "ERC20: max supply reached");
+        require(_maxSupply.sub(_totalSupply) >= amount, "ERC20: max supply reached");
 
         _beforeTokenTransfer(address(0), account, amount);
 
